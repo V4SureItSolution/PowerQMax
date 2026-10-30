@@ -10,6 +10,7 @@ class Quotation(db.Model):
     
     # Customer details
     customer_name = db.Column(db.String(100), nullable=False)
+    attn = db.Column(db.String(100))
     customer_phone = db.Column(db.String(20), nullable=False)
     customer_email = db.Column(db.String(100))
     customer_address = db.Column(db.Text)
@@ -18,6 +19,8 @@ class Quotation(db.Model):
     # Quotation details
     quotation_date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
     valid_until = db.Column(db.Date, nullable=False)
+    project = db.Column(db.String(150))
+    prepared_by = db.Column(db.String(100))
     
     # Financial details
     subtotal = db.Column(db.Float, default=0)
@@ -52,13 +55,25 @@ class Quotation(db.Model):
         return {
             'id': self.id,
             'quotationNumber': self.quotation_number,
+            'quotation_number': self.quotation_number,
             'customerName': self.customer_name,
+            'customer_name': self.customer_name,
+            'attn': self.attn,
             'customerPhone': self.customer_phone,
+            'customer_phone': self.customer_phone,
             'customerEmail': self.customer_email,
+            'customer_email': self.customer_email,
             'customerAddress': self.customer_address,
+            'customer_address': self.customer_address,
             'customerGstin': self.customer_gstin,
+            'customer_gstin': self.customer_gstin,
             'quotationDate': self.quotation_date.isoformat() if self.quotation_date else None,
+            'quotation_date': self.quotation_date.isoformat() if self.quotation_date else None,
             'validUntil': self.valid_until.isoformat() if self.valid_until else None,
+            'valid_until': self.valid_until.isoformat() if self.valid_until else None,
+            'project': self.project,
+            'preparedBy': self.prepared_by,
+            'prepared_by': self.prepared_by,
             'subtotal': self.subtotal,
             'discount': self.discount,
             'discountType': self.discount_type,
@@ -83,6 +98,7 @@ class QuotationItem(db.Model):
     product_model = db.Column(db.String(50))
     price = db.Column(db.Float, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
+    unit = db.Column(db.String(20), default='nos')
     gst = db.Column(db.Float, default=0)
     total = db.Column(db.Float, nullable=False)
     
@@ -98,10 +114,14 @@ class QuotationItem(db.Model):
         return {
             'id': self.id,
             'productId': self.product_id,
+            'product_id': self.product_id,
             'productName': self.product_name,
+            'product_name': self.product_name,
             'productModel': self.product_model,
+            'product_model': self.product_model,
             'price': self.price,
             'quantity': self.quantity,
+            'unit': self.unit or 'nos',
             'gst': self.gst,
             'total': self.total
         }

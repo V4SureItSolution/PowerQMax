@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { POWERQ_LOGO_BASE64, BCA_LOGO_BASE64 } from "../assets/invoiceLogos";
 
 const QuotationPage = () => {
   // Create axios instance with credentials
@@ -42,11 +43,12 @@ const QuotationPage = () => {
 
   // Company details
   const companyDetails = {
-    name: "Avva Inventory",
-    address: "No.71, M.T.H.road (Opp padi post office), Padi, Chennai - 600 050",
-    phone: "98657 09626",
-    email: "hiprintsolutions@gmail.com",
-    gstin: "33ABCDE1234F1Z5"
+    name: "PowerQ Max Engineering Pte Ltd",
+    address: "10 Jalan Besar, #15-02, Sim Lim Tower, Singapore 208787",
+    phone: "+65 9860 4001",
+    email: "powerqmaxengineering@gmail.com",
+    regNo: "202649167W",
+    gstin: ""
   };
 
   // State for quotations list
@@ -75,7 +77,9 @@ const QuotationPage = () => {
   const [modalStep, setModalStep] = useState(1);
 
   // Form data
-  const [customer, setCustomer] = useState({ name: "", phone: "", email: "", address: "", gstin: "" });
+  const [customer, setCustomer] = useState({ name: "", phone: "", email: "", address: "", gstin: "", attn: "" });
+  const [project, setProject] = useState("");
+  const [preparedBy, setPreparedBy] = useState("");
   const [search, setSearch] = useState("");
   const [products, setProducts] = useState([]);
   const [items, setItems] = useState([]);
@@ -85,7 +89,7 @@ const QuotationPage = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [quotationDate, setQuotationDate] = useState(new Date().toISOString().split('T')[0]);
-  const [validUntil, setValidUntil] = useState(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+  const [validUntil, setValidUntil] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
   const [notes, setNotes] = useState("");
   const [customerErrors, setCustomerErrors] = useState({});
   const [isAuthenticated, setIsAuthenticated] = useState(true);
@@ -438,14 +442,10 @@ const QuotationPage = () => {
     const errors = {};
     if (!customer.name.trim()) errors.name = "Customer name is required";
     if (!customer.phone.trim()) errors.phone = "Phone number is required";
-    else if (!/^\d{10}$/.test(customer.phone.replace(/\D/g, ''))) errors.phone = "Phone must be 10 digits";
+    else if (!/^\d{8,15}$/.test(customer.phone.replace(/\D/g, ''))) errors.phone = "Phone must be 8-15 digits";
 
     if (customer.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)) {
       errors.email = "Invalid email format";
-    }
-
-    if (customer.gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(customer.gstin)) {
-      errors.gstin = "Invalid GSTIN format";
     }
 
     setCustomerErrors(errors);
@@ -466,13 +466,15 @@ const QuotationPage = () => {
 
   // Reset form
   const resetForm = () => {
-    setCustomer({ name: "", phone: "", email: "", address: "", gstin: "" });
+    setCustomer({ name: "", phone: "", email: "", address: "", gstin: "", attn: "" });
+    setProject("");
+    setPreparedBy("");
     setItems([]);
     setDiscount(0);
     setDiscountType("fixed");
     setNotes("");
     setQuotationDate(new Date().toISOString().split('T')[0]);
-    setValidUntil(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+    setValidUntil(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
     setModalStep(1);
     setCustomerErrors({});
     setSearch("");
@@ -503,6 +505,7 @@ const QuotationPage = () => {
         price: product.sellPrice || product.price || 0,
         mrp: product.mrp || product.sellPrice || product.price || 0,
         quantity: 1,
+        unit: product.unit || 'nos',
         hsnCode: product.hsnCode || "",
         gst: product.gst || 0
       }]);
@@ -595,10 +598,13 @@ const QuotationPage = () => {
 
     const payload = {
       customerName: customer.name.trim(),
-      customerPhone: customer.phone.replace(/\D/g, ''),
+      attn: (customer.attn || '').trim(),
+      customerPhone: customer.phone.trim(),
       customerEmail: customer.email.trim() || '',
       customerAddress: customer.address.trim() || '',
       customerGstin: customer.gstin.trim().toUpperCase() || '',
+      project: (project || '').trim(),
+      preparedBy: (preparedBy || '').trim(),
       quotationDate,
       validUntil,
       discount: discountAmount,
@@ -608,6 +614,7 @@ const QuotationPage = () => {
       items: items.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
+        unit: item.unit || 'nos',
         price: item.price,
         gst: item.gst || 0
       }))
@@ -674,258 +681,517 @@ const QuotationPage = () => {
   // Function to print quotation
   const handlePrintQuotation = (quotation) => {
     const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow pop-ups to print the quotation');
+      return;
+    }
 
-    if (printWindow) {
-      const itemsHtml = quotation.items.map(item => `
-        <tr>
-          <td style="padding: 8px; border: 1px solid #ddd;">${item.productName} ${item.productModel ? `(${item.productModel})` : ''}</td>
-          <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.quantity}</td>
-          <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">₹${item.price.toFixed(2)}</td>
-          <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">₹${item.total.toFixed(2)}</td>
-        </tr>
-      `).join('');
+    const formatDisplayDate = (dateString) => {
+      if (!dateString) return '';
+      try {
+        const d = new Date(dateString);
+        if (isNaN(d.getTime())) return dateString;
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+      } catch (e) {
+        return dateString;
+      }
+    };
 
-      const printContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Quotation ${quotation.quotationNumber}</title>
-          <style>
-            body { 
-              font-family: Arial, sans-serif; 
-              margin: 30px; 
-              color: #333;
-              line-height: 1.6;
-            }
-            .header { 
-              text-align: center; 
-              margin-bottom: 30px; 
-              border-bottom: 2px solid #3b82f6;
-              padding-bottom: 20px;
-            }
-            .company-logo {
-              max-width: 150px;
-              max-height: 80px;
-              margin-bottom: 10px;
-              object-fit: contain;
-            }
-            .company-name { 
-              font-size: 28px; 
-              font-weight: bold; 
-              color: #3b82f6;
-              margin-bottom: 5px;
-            }
-            .company-details {
-              font-size: 14px;
-              color: #666;
-            }
-            .document-title {
-              font-size: 24px;
-              font-weight: bold;
-              text-align: center;
-              margin: 20px 0;
-              color: #1e293b;
-            }
-            .details-table {
-              width: 100%;
-              margin: 20px 0;
-              border-spacing: 0;
-            }
-            .details-table td {
-              vertical-align: top;
-              padding: 0;
-            }
-            .left-details, .right-details {
-              width: 48%;
-            }
-            .detail-box {
-              background: #f8fafc;
-              padding: 15px;
-              border-radius: 8px;
-              border: 1px solid #e2e8f0;
-            }
-            .detail-box h3 {
-              margin-top: 0;
-              margin-bottom: 10px;
-              color: #3b82f6;
-              font-size: 16px;
-            }
-            table { 
-              width: 100%; 
-              border-collapse: collapse; 
-              margin: 20px 0; 
-            }
-            th { 
-              background-color: #3b82f6; 
-              color: white; 
-              padding: 10px; 
-              text-align: left; 
-              font-size: 14px;
-            }
-            td { 
-              padding: 8px; 
-              border: 1px solid #ddd; 
-            }
-            .summary { 
-              margin: 20px 0; 
-              text-align: right; 
-            }
-            .summary-item {
-              margin-bottom: 5px;
-            }
-            .total { 
-              font-size: 18px; 
-              font-weight: bold; 
-              color: #22c55e; 
-              margin-top: 10px;
-              padding-top: 10px;
-              border-top: 2px solid #333;
-            }
-            .notes {
-              margin-top: 30px;
-              padding: 15px;
-              background: #f8fafc;
-              border-left: 4px solid #3b82f6;
-            }
-            .footer { 
-              margin-top: 50px; 
-              text-align: center; 
-              font-size: 12px; 
-              color: #666;
-              border-top: 1px solid #ddd;
-              padding-top: 20px;
-            }
-            .signature {
-              display: flex;
-              justify-content: space-between;
-              margin-top: 40px;
-            }
-            .signature-line {
-              width: 200px;
-              border-bottom: 1px solid #333;
-              margin-top: 5px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <img src="/avva-logo.jpeg" class="company-logo" alt="Avva Inventory Logo">
-            <div class="company-name">Avva Inventory</div>
-            <div class="company-details">No.71, M.T.H.road (Opp padi post office), Padi, Chennai - 600 050</div>
-            <div class="company-details">Phone: 98657 09626 | Email: hiprintsolutions@gmail.com | GST: 33ABCDE1234F1Z5</div>
-          </div>       
-          
-          <div class="document-title">QUOTATION</div>
-          
-          <table class="details-table">
+    const items = quotation.items || [];
+    const totalRowsCount = Math.max(15, items.length);
+
+    let rowsHtml = '';
+    for (let i = 0; i < totalRowsCount; i++) {
+      const rowNo = i + 1;
+      if (i < items.length) {
+        const item = items[i];
+        const desc = (item.product_name || item.productName || '') + (item.product_model || item.productModel ? ` (${item.product_model || item.productModel})` : '');
+        const qty = item.quantity !== undefined ? item.quantity : '';
+        const unit = item.unit || 'nos';
+        const price = (typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0).toFixed(2);
+        const amount = (typeof item.total === 'number' ? item.total : (parseFloat(item.price) || 0) * (item.quantity || 1)).toFixed(2);
+        rowsHtml += `
+          <tr>
+            <td class="col-no">${rowNo}</td>
+            <td class="col-desc">${desc}</td>
+            <td class="col-qty">${qty}</td>
+            <td class="col-unit">${unit}</td>
+            <td class="col-price">${price}</td>
+            <td class="col-amount">${amount}</td>
+          </tr>
+        `;
+      } else {
+        rowsHtml += `
+          <tr>
+            <td class="col-no">${rowNo}</td>
+            <td class="col-desc"></td>
+            <td class="col-qty"></td>
+            <td class="col-unit"></td>
+            <td class="col-price"></td>
+            <td class="col-amount"></td>
+          </tr>
+        `;
+      }
+    }
+
+    const totalAmount = (typeof quotation.total === 'number' ? quotation.total : parseFloat(quotation.total) || 0).toFixed(2);
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Quotation ${quotation.quotationNumber || quotation.quotation_number || 'PQM-QT-0001'}</title>
+        <style>
+          * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          @page {
+            size: A4 portrait;
+            margin: 8mm 12mm 8mm 12mm;
+          }
+          body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 10px 20px;
+            color: #000;
+            background: #fff;
+            font-size: 11px;
+            line-height: 1.25;
+          }
+          .invoice-container {
+            width: 100%;
+            max-width: 750px;
+            margin: 0 auto;
+          }
+          /* Header */
+          .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2px;
+          }
+          .header-left {
+            width: 130px;
+            vertical-align: middle;
+            text-align: left;
+          }
+          .header-left img {
+            width: 110px;
+            height: auto;
+            display: block;
+          }
+          .header-center {
+            text-align: center;
+            vertical-align: middle;
+            padding: 0 10px;
+          }
+          .company-name {
+            color: #0b2f6b;
+            font-weight: 800;
+            font-size: 13pt;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+          }
+          .company-tags {
+            color: #2575fc;
+            font-size: 7.5pt;
+            font-weight: bold;
+            margin-bottom: 2px;
+          }
+          .company-info {
+            color: #555555;
+            font-size: 7.5pt;
+            line-height: 1.35;
+          }
+          .header-right {
+            width: 110px;
+            vertical-align: middle;
+            text-align: right;
+          }
+          .header-right img {
+            width: 90px;
+            height: auto;
+            display: inline-block;
+          }
+          /* Divider */
+          .divider-container {
+            margin: 6px 0 10px 0;
+            width: 100%;
+          }
+          .divider-thick {
+            height: 2.5px;
+            background-color: #0b2f6b;
+            width: 100%;
+          }
+          .divider-gap {
+            height: 2px;
+          }
+          .divider-thin {
+            height: 1px;
+            background-color: #38bdf8;
+            width: 100%;
+          }
+          /* Document Title */
+          .doc-title {
+            text-align: center;
+            color: #0b2f6b;
+            font-size: 15pt;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+          }
+          /* Details Box */
+          .meta-wrapper {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            width: 100%;
+          }
+          .meta-table {
+            border-collapse: collapse;
+          }
+          .meta-left {
+            width: 58%;
+          }
+          .meta-left .meta-label {
+            width: 65px;
+          }
+          .meta-right {
+            width: 40%;
+          }
+          .meta-right .meta-label {
+            width: 95px;
+          }
+          .meta-label {
+            color: #0b2f6b;
+            font-weight: bold;
+            font-size: 8.5pt;
+            padding: 2px 4px 2px 0;
+            vertical-align: middle;
+            white-space: nowrap;
+          }
+          .meta-val {
+            background-color: #fff9db !important;
+            font-size: 8.5pt;
+            padding: 2px 6px;
+            color: #000;
+            height: 18px;
+            vertical-align: middle;
+          }
+          /* Items Table */
+          .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+          }
+          .items-table th {
+            background-color: #0b2f6b !important;
+            color: #ffffff !important;
+            font-weight: bold;
+            font-size: 8.5pt;
+            padding: 4px 2px;
+            border: 1px solid #9ca3af;
+            text-align: center;
+            vertical-align: middle;
+          }
+          .items-table td {
+            font-size: 8.5pt;
+            padding: 2.5px 5px;
+            border: 1px solid #9ca3af;
+            height: 18px;
+            line-height: 1.2;
+          }
+          .col-no {
+            width: 6%;
+            text-align: center;
+            background-color: #ffffff !important;
+          }
+          .col-desc {
+            width: 46%;
+            text-align: left;
+            background-color: #fff9db !important;
+            white-space: pre-wrap;
+            word-break: break-word;
+          }
+          .col-qty {
+            width: 7%;
+            text-align: center;
+            background-color: #fff9db !important;
+          }
+          .col-unit {
+            width: 7%;
+            text-align: center;
+            background-color: #fff9db !important;
+          }
+          .col-price {
+            width: 17%;
+            text-align: right;
+            background-color: #fff9db !important;
+          }
+          .col-amount {
+            width: 17%;
+            text-align: right;
+            background-color: #ffffff !important;
+          }
+          /* Total & GST notice bar */
+          .bottom-bar {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0;
+            table-layout: fixed;
+          }
+          .gst-note-cell {
+            width: 66%;
+            font-style: italic;
+            font-size: 8pt;
+            color: #666;
+            vertical-align: top;
+            padding-top: 4px;
+            padding-left: 2px;
+            text-align: left;
+          }
+          .total-label-cell {
+            width: 17%;
+            background-color: #0b2f6b !important;
+            color: #ffffff !important;
+            font-weight: bold;
+            text-align: center;
+            font-size: 8.5pt;
+            padding: 4px 6px;
+            border-left: 1px solid #0b2f6b;
+            border-right: 1px solid #0b2f6b;
+            border-bottom: 1px solid #0b2f6b;
+          }
+          .total-value-cell {
+            width: 17%;
+            background-color: #ffffff !important;
+            color: #000;
+            font-weight: bold;
+            text-align: right;
+            font-size: 8.5pt;
+            padding: 4px 5px;
+            border-right: 1px solid #9ca3af;
+            border-bottom: 1px solid #9ca3af;
+            border-left: 1px solid #9ca3af;
+          }
+          /* Terms */
+          .section-heading {
+            color: #0b2f6b;
+            font-size: 9pt;
+            font-weight: bold;
+            margin-top: 14px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+          }
+          .terms-ol {
+            margin: 2px 0 0 0;
+            padding-left: 14px;
+            font-size: 7.5pt;
+            line-height: 1.35;
+            color: #000;
+          }
+          .terms-ol li {
+            margin-bottom: 2px;
+          }
+          /* Signatures */
+          .signatures-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 32px;
+            margin-bottom: 12px;
+          }
+          .sig-block {
+            width: 44%;
+          }
+          .sig-title {
+            font-weight: bold;
+            font-size: 8.5pt;
+            color: #000;
+            margin-bottom: 38px;
+          }
+          .sig-line {
+            border-bottom: 1.2px solid #000;
+            width: 100%;
+            margin-bottom: 4px;
+          }
+          .sig-legend {
+            font-size: 7.5pt;
+            color: #666;
+          }
+          /* Page footer */
+          .page-footer {
+            text-align: center;
+            font-size: 7.5pt;
+            color: #555;
+            margin-top: 10px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-container">
+          <!-- Top Header -->
+          <table class="header-table">
             <tr>
-              <td style="width: 48%;">
-                <div class="detail-box">
-                  <h3>Bill To:</h3>
-                  <p><strong>${quotation.customerName}</strong></p>
-                  <p>Phone: ${quotation.customerPhone}</p>
-                  ${quotation.customerEmail ? `<p>Email: ${quotation.customerEmail}</p>` : ''}
-                  ${quotation.customerAddress ? `<p>Address: ${quotation.customerAddress}</p>` : ''}
-                  ${quotation.customerGstin ? `<p>GSTIN: ${quotation.customerGstin}</p>` : ''}
-                </div>
+              <td class="header-left">
+                <img src="${POWERQ_LOGO_BASE64}" alt="PowerQ Max Logo" />
               </td>
-              <td style="width: 4%;"></td>
-              <td style="width: 48%;">
-                <div class="detail-box">
-                  <h3>Quotation Details:</h3>
-                  <p><strong>Quotation No:</strong> ${quotation.quotationNumber}</p>
-                  <p><strong>Date:</strong> ${new Date(quotation.quotationDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
-                  <p><strong>Valid Until:</strong> ${new Date(quotation.validUntil).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
-                  <p><strong>Prepared By:</strong> ${JSON.parse(localStorage.getItem('user'))?.username || 'Admin'}</p>
+              <td class="header-center">
+                <div class="company-name">POWERQ MAX ENGINEERING PTE LTD</div>
+                <div class="company-tags">
+                  <span>Electrical</span> &bull; 
+                  <span>BMS</span> &bull; 
+                  <span>ELV &amp; Security</span> &bull; 
+                  <span>Fire Alarm</span> &bull; 
+                  <span>Renovation</span> &bull; 
+                  <span>IT</span>
                 </div>
+                <div class="company-info">Company Registration No. (UEN): 202649167W</div>
+                <div class="company-info">10 Jalan Besar, #15-02, Sim Lim Tower, Singapore 208787</div>
+                <div class="company-info"><strong>Tel:</strong> +65 9860 4001 &nbsp;|&nbsp; <strong>Email:</strong> powerqmaxengineering@gmail.com</div>
+              </td>
+              <td class="header-right">
+                <img src="${BCA_LOGO_BASE64}" alt="BCA Registered Contractor" />
               </td>
             </tr>
           </table>
-          
-          <table>
+
+          <!-- Double line divider -->
+          <div class="divider-container">
+            <div class="divider-thick"></div>
+            <div class="divider-gap"></div>
+            <div class="divider-thin"></div>
+          </div>
+
+          <!-- Document Title -->
+          <div class="doc-title">QUOTATION</div>
+
+          <!-- Metadata Section -->
+          <div class="meta-wrapper">
+            <table class="meta-table meta-left">
+              <tr>
+                <td class="meta-label">To:</td>
+                <td class="meta-val">${quotation.customerName || quotation.customer_name || ''}</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Attn:</td>
+                <td class="meta-val">${quotation.attn || ''}</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Address:</td>
+                <td class="meta-val">${quotation.customerAddress || quotation.customer_address || ''}</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Tel:</td>
+                <td class="meta-val">${quotation.customerPhone || quotation.customer_phone || ''}</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Email:</td>
+                <td class="meta-val">${quotation.customerEmail || quotation.customer_email || ''}</td>
+              </tr>
+            </table>
+
+            <table class="meta-table meta-right">
+              <tr>
+                <td class="meta-label">Quotation No.:</td>
+                <td class="meta-val">${quotation.quotationNumber || quotation.quotation_number || 'PQM-QT-0001'}</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Date:</td>
+                <td class="meta-val">${formatDisplayDate(quotation.quotationDate || quotation.quotation_date)}</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Valid Until:</td>
+                <td class="meta-val">${formatDisplayDate(quotation.validUntil || quotation.valid_until)}</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Project:</td>
+                <td class="meta-val">${quotation.project || ''}</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Prepared by:</td>
+                <td class="meta-val">${quotation.preparedBy || quotation.prepared_by || ''}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Items Table -->
+          <table class="items-table">
             <thead>
               <tr>
-                <th style="padding: 10px; border: 1px solid #ddd;">Product Description</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: center; width: 60px;">Qty</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: right; width: 100px;">Unit Price</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: right; width: 120px;">Total</th>
+                <th style="width: 6%;">No.</th>
+                <th style="width: 46%;">Description</th>
+                <th style="width: 7%;">Qty</th>
+                <th style="width: 7%;">Unit</th>
+                <th style="width: 17%;">Unit Price<br/>(SGD)</th>
+                <th style="width: 17%;">Amount (SGD)</th>
               </tr>
             </thead>
             <tbody>
-              ${itemsHtml}
+              ${rowsHtml}
             </tbody>
           </table>
-          
-          <div class="summary">
-            <div style="width: 250px; margin-left: auto;">
-              <div class="summary-item">
-                <span style="display: inline-block; width: 120px; text-align: left;"><strong>Subtotal:</strong></span>
-                <span style="display: inline-block; width: 100px; text-align: right;">₹${quotation.subtotal.toFixed(2)}</span>
-              </div>
-              ${quotation.discount > 0 ? `
-              <div class="summary-item">
-                <span style="display: inline-block; width: 120px; text-align: left;"><strong>Discount:</strong></span>
-                <span style="display: inline-block; width: 100px; text-align: right; color: #ef4444;">-₹${quotation.discount.toFixed(2)}</span>
-              </div>` : ''}
-              <div class="total">
-                <span style="display: inline-block; width: 120px; text-align: left;"><strong>Total:</strong></span>
-                <span style="display: inline-block; width: 100px; text-align: right;">₹${quotation.total.toFixed(2)}</span>
-              </div>
-              <div style="font-size: 10px; margin-top: 5px; color: #666; font-style: italic;">(Inclusive of all taxes)</div>
-            </div>
-          </div>
-          </div>
-          
-          ${quotation.notes ? `
-            <div class="notes">
-              <h4 style="margin-top:0; color:#3b82f6;">Terms & Conditions:</h4>
-              <p>${quotation.notes}</p>
-            </div>
-          ` : `
-            <div class="notes">
-              <h4 style="margin-top:0; color:#3b82f6;">Terms & Conditions:</h4>
-              <ul style="margin:0; padding-left:20px;">
-                <li>Quotation valid for 7 days from the date of issue</li>
-                <li>Prices are subject to change without prior notice</li>
-                <li>Payment terms: 100% advance or as agreed</li>
-                <li>Delivery: As per availability</li>
-              </ul>
-            </div>
-          `}
-          
-          <div class="signature">
-            <div>
-              <p><strong>For Avva Inventory</strong></p>
-              <div class="signature-line"></div>
-              <p>Authorized Signatory</p>
-            </div>
-            <div>
-              <p><strong>Customer Signature</strong></p>
-              <div class="signature-line"></div>
-            </div>
-          </div>
-          
-          <div class="footer">
-            <p>This is a computer generated quotation. Valid until specified date.</p>
-            <p>Thank you for your business!</p>
-          </div>
-          <script>
-            window.onload = function() {
-              setTimeout(function() {
-                window.print();
-                setTimeout(function() { window.close(); }, 500);
-              }, 500);
-            };
-          </script>
-        </body>
-        </html>
-      `;
 
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-    } else {
-      alert('Please allow pop-ups to print the quotation');
-    }
+          <!-- GST Notice & Total -->
+          <table class="bottom-bar">
+            <tr>
+              <td class="gst-note-cell">Not GST-registered &ndash; no GST charged.</td>
+              <td class="total-label-cell">TOTAL</td>
+              <td class="total-value-cell">${totalAmount}</td>
+            </tr>
+          </table>
+
+          <!-- Terms & Conditions -->
+          <div class="section-heading">TERMS &amp; CONDITIONS</div>
+          <ol class="terms-ol">
+            <li>This quotation is valid for 30 days from the date above.</li>
+            <li>All prices are in Singapore Dollars (SGD). PowerQ Max Engineering Pte Ltd is not GST-registered; no GST is charged.</li>
+            <li>Payment shall be made upon completion of works, or according to the payment terms agreed in writing before work commences.</li>
+            <li>Late payment may be subject to additional charges.</li>
+            <li>Any work or materials not stated in this quotation are excluded. Additional or variation works will be charged separately.</li>
+            <li>Works carried out after office hours, on weekends or on public holidays will be charged separately.</li>
+            <li>Completion dates depend on site readiness, access and material availability.</li>
+            <li>Warranty is as agreed in writing and excludes misuse, power surges, acts of nature and alterations by third parties.</li>
+            <li>Acceptance of this quotation, by signature or by purchase order, means agreement to these terms.</li>
+          </ol>
+
+          <!-- Signatures -->
+          <div class="signatures-container">
+            <div class="sig-block">
+              <div class="sig-title">For PowerQ Max Engineering Pte Ltd</div>
+              <div class="sig-line"></div>
+              <div class="sig-legend">Name / Signature / Company Stamp / Date</div>
+            </div>
+            <div class="sig-block">
+              <div class="sig-title">Accepted by Customer</div>
+              <div class="sig-line"></div>
+              <div class="sig-legend">Name / Signature / Company Stamp / Date</div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="page-footer">Page 1 of 1</div>
+        </div>
+
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+            }, 300);
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(printContent);
+    printWindow.document.close();
   };
 
   const gstDetails = calculateGST();
@@ -1163,22 +1429,21 @@ const QuotationPage = () => {
             <div style={styles.modalContent}>
               {/* Company Header */}
               <div style={styles.viewCompanyHeader}>
-                <img src="/avva-logo.jpeg" alt="Avva Inventory Logo" style={{ maxWidth: '120px', marginBottom: '10px' }} />
                 <h3 style={{ color: '#3b82f6', margin: 0 }}>{companyDetails.name}</h3>
                 <p style={{ margin: '5px 0', color: '#94a3b8' }}>{companyDetails.address}</p>
-                <p style={{ margin: 0, color: '#94a3b8' }}>Phone: {companyDetails.phone} | Email: {companyDetails.email}</p>
+                <p style={{ margin: 0, color: '#94a3b8' }}>Tel: {companyDetails.phone} | Email: {companyDetails.email}</p>
               </div>
 
               <div style={styles.viewTwoColumn}>
                 <div style={styles.viewColumn}>
                   <div style={styles.viewSection}>
-                    <h4 style={styles.viewSectionTitle}>Bill To:</h4>
+                    <h4 style={styles.viewSectionTitle}>To:</h4>
                     <div style={styles.viewCard}>
                       <p><strong>{viewingQuotation.customerName}</strong></p>
-                      <p>Phone: {viewingQuotation.customerPhone}</p>
+                      {viewingQuotation.attn && <p><strong>Attn:</strong> {viewingQuotation.attn}</p>}
+                      <p>Tel: {viewingQuotation.customerPhone}</p>
                       {viewingQuotation.customerEmail && <p>Email: {viewingQuotation.customerEmail}</p>}
                       {viewingQuotation.customerAddress && <p>Address: {viewingQuotation.customerAddress}</p>}
-                      {viewingQuotation.customerGstin && <p>GSTIN: {viewingQuotation.customerGstin}</p>}
                     </div>
                   </div>
                 </div>
@@ -1188,8 +1453,10 @@ const QuotationPage = () => {
                     <h4 style={styles.viewSectionTitle}>Quotation Details:</h4>
                     <div style={styles.viewCard}>
                       <p><strong>Quotation No:</strong> {viewingQuotation.quotationNumber}</p>
-                      <p><strong>Date:</strong> {new Date(viewingQuotation.quotationDate).toLocaleDateString('en-IN')}</p>
-                      <p><strong>Valid Until:</strong> {new Date(viewingQuotation.validUntil).toLocaleDateString('en-IN')}</p>
+                      <p><strong>Date:</strong> {viewingQuotation.quotationDate}</p>
+                      <p><strong>Valid Until:</strong> {viewingQuotation.validUntil}</p>
+                      {viewingQuotation.project && <p><strong>Project:</strong> {viewingQuotation.project}</p>}
+                      {viewingQuotation.preparedBy && <p><strong>Prepared by:</strong> {viewingQuotation.preparedBy}</p>}
                     </div>
                   </div>
                 </div>
@@ -1202,23 +1469,23 @@ const QuotationPage = () => {
                     <thead>
                       <tr>
                         <th style={styles.th}>Product</th>
-                        <th style={styles.th}>Price</th>
                         <th style={styles.th}>Qty</th>
-                        <th style={styles.th}>GST</th>
-                        <th style={styles.th}>Total</th>
+                        <th style={styles.th}>Unit</th>
+                        <th style={styles.th}>Price (SGD)</th>
+                        <th style={styles.th}>Total (SGD)</th>
                       </tr>
                     </thead>
                     <tbody>
                       {viewingQuotation.items?.map((item, index) => (
                         <tr key={index}>
                           <td style={styles.td}>
-                            <div>{item.productName}</div>
-                            {item.productModel && <small style={{ color: '#94a3b8' }}>{item.productModel}</small>}
+                            <div>{item.productName || item.product_name}</div>
+                            {(item.productModel || item.product_model) && <small style={{ color: '#94a3b8' }}>{item.productModel || item.product_model}</small>}
                           </td>
-                          <td style={styles.td}>₹{item.price.toFixed(2)}</td>
                           <td style={styles.td}>{item.quantity}</td>
-                          <td style={styles.td}>{item.gst}%</td>
-                          <td style={styles.td}>₹{item.total.toFixed(2)}</td>
+                          <td style={styles.td}>{item.unit || 'nos'}</td>
+                          <td style={styles.td}>${(item.price || 0).toFixed(2)}</td>
+                          <td style={styles.td}>${(item.total || (item.price * item.quantity) || 0).toFixed(2)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1229,17 +1496,17 @@ const QuotationPage = () => {
               <div style={styles.viewSummary}>
                 <div style={styles.viewSummaryItem}>
                   <span>Subtotal:</span>
-                  <span>₹{viewingQuotation.subtotal?.toFixed(2)}</span>
+                  <span>${viewingQuotation.subtotal?.toFixed(2)}</span>
                 </div>
                 {viewingQuotation.discount > 0 && (
                   <div style={styles.viewSummaryItem}>
                     <span>Discount:</span>
-                    <span style={{ color: '#ef4444' }}>-₹{viewingQuotation.discount?.toFixed(2)}</span>
+                    <span style={{ color: '#ef4444' }}>-${viewingQuotation.discount?.toFixed(2)}</span>
                   </div>
                 )}
                 <div style={{ ...styles.viewSummaryItem, ...styles.viewTotal }}>
-                  <span>Total:</span>
-                  <span>₹{viewingQuotation.total?.toFixed(2)}</span>
+                  <span>Total (SGD):</span>
+                  <span>${viewingQuotation.total?.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -1327,13 +1594,22 @@ const QuotationPage = () => {
                     </div>
 
                     <div style={styles.formField}>
-                      <label style={styles.label}>Phone *</label>
+                      <label style={styles.label}>Attn</label>
+                      <input
+                        style={styles.input}
+                        value={customer.attn || ''}
+                        onChange={(e) => setCustomer({ ...customer, attn: e.target.value })}
+                        placeholder="Attention person / department"
+                      />
+                    </div>
+
+                    <div style={styles.formField}>
+                      <label style={styles.label}>Phone / Tel *</label>
                       <input
                         style={{ ...styles.input, borderColor: customerErrors.phone ? '#ef4444' : '#334155' }}
                         value={customer.phone}
                         onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
-                        placeholder="10 digit mobile number"
-                        maxLength="10"
+                        placeholder="Enter phone number"
                       />
                       {customerErrors.phone && (
                         <span style={styles.errorText}>{customerErrors.phone}</span>
@@ -1365,17 +1641,23 @@ const QuotationPage = () => {
                     </div>
 
                     <div style={styles.formField}>
-                      <label style={styles.label}>GSTIN (Optional)</label>
+                      <label style={styles.label}>Project</label>
                       <input
-                        style={{ ...styles.input, borderColor: customerErrors.gstin ? '#ef4444' : '#334155' }}
-                        value={customer.gstin}
-                        onChange={(e) => setCustomer({ ...customer, gstin: e.target.value.toUpperCase() })}
-                        placeholder="22AAAAA0000A1Z5"
-                        maxLength="15"
+                        style={styles.input}
+                        value={project}
+                        onChange={(e) => setProject(e.target.value)}
+                        placeholder="Project name or reference"
                       />
-                      {customerErrors.gstin && (
-                        <span style={styles.errorText}>{customerErrors.gstin}</span>
-                      )}
+                    </div>
+
+                    <div style={styles.formField}>
+                      <label style={styles.label}>Prepared by</label>
+                      <input
+                        style={styles.input}
+                        value={preparedBy}
+                        onChange={(e) => setPreparedBy(e.target.value)}
+                        placeholder="Prepared by name"
+                      />
                     </div>
                   </div>
 
@@ -1454,7 +1736,7 @@ const QuotationPage = () => {
                         <thead>
                           <tr>
                             <th style={styles.th}>Product</th>
-                            <th style={styles.th}>HSN</th>
+                            <th style={styles.th}>Unit</th>
                             <th style={styles.th}>Price</th>
                             <th style={styles.th}>Qty</th>
                             <th style={styles.th}>GST</th>
@@ -1469,8 +1751,18 @@ const QuotationPage = () => {
                                 <div>{item.name}</div>
                                 {item.model && <small style={styles.modelText}>{item.model}</small>}
                               </td>
-                              <td style={styles.td}>{item.hsnCode || "-"}</td>
-                              <td style={styles.td}>₹{item.price.toFixed(2)}</td>
+                              <td style={styles.td}>
+                                <input
+                                  style={{ ...styles.qtyInput, width: '60px' }}
+                                  value={item.unit || 'nos'}
+                                  onChange={(e) => {
+                                    const updated = [...items];
+                                    updated[index].unit = e.target.value;
+                                    setItems(updated);
+                                  }}
+                                />
+                              </td>
+                              <td style={styles.td}>${item.price.toFixed(2)}</td>
                               <td style={styles.td}>
                                 <input
                                   type="number"
@@ -1481,7 +1773,7 @@ const QuotationPage = () => {
                                 />
                               </td>
                               <td style={styles.td}>{item.gst}%</td>
-                              <td style={styles.td}>₹{(item.price * item.quantity).toFixed(2)}</td>
+                              <td style={styles.td}>${(item.price * item.quantity).toFixed(2)}</td>
                               <td style={styles.td}>
                                 <button style={styles.deleteBtn} onClick={() => removeItem(index)}>
                                   Remove

@@ -71,10 +71,13 @@ def create_quotation():
         quotation = Quotation()
         quotation.quotation_number = generate_quotation_number()
         quotation.customer_name = data['customerName']
+        quotation.attn = data.get('attn', '')
         quotation.customer_phone = data['customerPhone']
         quotation.customer_email = data.get('customerEmail', '')
         quotation.customer_address = data.get('customerAddress', '')
         quotation.customer_gstin = data.get('customerGstin', '')
+        quotation.project = data.get('project', '')
+        quotation.prepared_by = data.get('preparedBy', data.get('prepared_by', ''))
         
         # Parse dates
         if data.get('quotationDate'):
@@ -85,8 +88,8 @@ def create_quotation():
         if data.get('validUntil'):
             quotation.valid_until = datetime.strptime(data['validUntil'], '%Y-%m-%d').date()
         else:
-            # Default validity: 7 days
-            quotation.valid_until = datetime.now().date() + timedelta(days=7)
+            # Default validity: 30 days
+            quotation.valid_until = datetime.now().date() + timedelta(days=30)
         
         # Discount details
         quotation.discount_type = data.get('discountType', 'fixed')
@@ -117,6 +120,7 @@ def create_quotation():
             item.product_model = product.model or ''
             item.price = float(item_data.get('price', product.sell_price))
             item.quantity = int(item_data['quantity'])
+            item.unit = item_data.get('unit', 'nos') or 'nos'
             item.gst = float(item_data.get('gst', getattr(product, 'gst_rate', 0)))
             item.calculate_total()
             
@@ -199,6 +203,8 @@ def update_quotation(id):
         # Update customer details
         if data.get('customerName'):
             quotation.customer_name = data['customerName']
+        if 'attn' in data:
+            quotation.attn = data['attn']
         if data.get('customerPhone'):
             quotation.customer_phone = data['customerPhone']
         if data.get('customerEmail') is not None:
@@ -207,6 +213,10 @@ def update_quotation(id):
             quotation.customer_address = data['customerAddress']
         if data.get('customerGstin') is not None:
             quotation.customer_gstin = data['customerGstin']
+        if 'project' in data:
+            quotation.project = data['project']
+        if 'preparedBy' in data or 'prepared_by' in data:
+            quotation.prepared_by = data.get('preparedBy', data.get('prepared_by', ''))
         
         # Update dates
         if data.get('quotationDate'):
@@ -246,6 +256,7 @@ def update_quotation(id):
                 item.product_model = product.model or ''
                 item.price = float(item_data.get('price', product.sell_price))
                 item.quantity = int(item_data['quantity'])
+                item.unit = item_data.get('unit', 'nos') or 'nos'
                 item.gst = float(item_data.get('gst', getattr(product, 'gst_rate', 0)))
                 item.calculate_total()
                 
@@ -367,19 +378,10 @@ def health_check():
 
 # Helper function to generate quotation number
 def generate_quotation_number():
-    """Generate a unique quotation number"""
-    import random
-    import string
-    
-    year = datetime.now().strftime('%y')
-    month = datetime.now().strftime('%m')
-    
-    # Get count of quotations for this month
-    count = Quotation.query.filter(
-        Quotation.quotation_number.like(f'Q-{year}{month}%')
-    ).count() + 1
-    
-    # Generate random string for uniqueness
-    random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-    
-    return f'Q-{year}{month}-{count:04d}-{random_str}'
+    """Generate a unique quotation number like PQM-QT-0001"""
+    total = Quotation.query.count() + 1
+    number = f"PQM-QT-{total:04d}"
+    while Quotation.query.filter_by(quotation_number=number).first():
+        total += 1
+        number = f"PQM-QT-{total:04d}"
+    return number

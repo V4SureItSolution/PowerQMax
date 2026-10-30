@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import { POWERQ_LOGO_BASE64, BCA_LOGO_BASE64 } from "../assets/invoiceLogos";
 
 const InvoicePage = () => {
   // Create axios instance with credentials
@@ -42,11 +43,12 @@ const InvoicePage = () => {
 
   // Company details
   const companyDetails = {
-    name: "Avva Inventory",
-    address: "No.71, M.T.H.road (Opp padi post office), Padi, Chennai - 600 050",
-    phone: "98657 09626",
-    email: "hiprintsolutions@gmail.com",
-    gstin: "33ABCDE1234F1Z5"
+    name: "POWERQ MAX ENGINEERING PTE LTD",
+    services: "Electrical • BMS • ELV & Security • Fire Alarm • Renovation • IT",
+    uen: "202649167W",
+    address: "10 Jalan Besar, #15-02, Sim Lim Tower, Singapore 208787",
+    phone: "+65 9860 4001",
+    email: "powerqmaxengineering@gmail.com"
   };
 
   // State for invoices list
@@ -77,7 +79,12 @@ const InvoicePage = () => {
   const [modalStep, setModalStep] = useState(1);
 
   // Form data
-  const [customer, setCustomer] = useState({ name: "", phone: "", email: "", address: "", gstin: "" });
+  const [customer, setCustomer] = useState({ name: "", phone: "", email: "", address: "", gstin: "", attn: "" });
+  const [yourPoNo, setYourPoNo] = useState("");
+  const [ourDoNo, setOurDoNo] = useState("");
+  const [bankName, setBankName] = useState("[Bank name]");
+  const [accountNo, setAccountNo] = useState("[Account number]");
+  const [bankCode, setBankCode] = useState("[Code]");
   const [search, setSearch] = useState("");
   const [products, setProducts] = useState([]);
   const [items, setItems] = useState([]);
@@ -401,14 +408,10 @@ const InvoicePage = () => {
     const errors = {};
     if (!customer.name.trim()) errors.name = "Customer name is required";
     if (!customer.phone.trim()) errors.phone = "Phone number is required";
-    else if (!/^\d{10}$/.test(customer.phone.replace(/\D/g, ''))) errors.phone = "Phone must be 10 digits";
+    else if (!/^\d{8,15}$/.test(customer.phone.replace(/\D/g, ''))) errors.phone = "Phone must be 8-15 digits";
     
     if (customer.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)) {
       errors.email = "Invalid email format";
-    }
-    
-    if (customer.gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(customer.gstin)) {
-      errors.gstin = "Invalid GSTIN format";
     }
     
     setCustomerErrors(errors);
@@ -431,7 +434,12 @@ const InvoicePage = () => {
 
   // Reset form
   const resetForm = () => {
-    setCustomer({ name: "", phone: "", email: "", address: "", gstin: "" });
+    setCustomer({ name: "", phone: "", email: "", address: "", gstin: "", attn: "" });
+    setYourPoNo("");
+    setOurDoNo("");
+    setBankName("[Bank name]");
+    setAccountNo("[Account number]");
+    setBankCode("[Code]");
     setItems([]);
     setDiscount(0);
     setDiscountType("fixed");
@@ -471,6 +479,7 @@ const InvoicePage = () => {
         price: product.sellPrice || product.price || 0,
         mrp: product.mrp || product.sellPrice || product.price || 0,
         quantity: 1,
+        unit: product.unit || 'nos',
         hsnCode: product.hsnCode || "",
         gst: product.gst || 0
       }]);
@@ -488,6 +497,13 @@ const InvoicePage = () => {
     if (qty < 1) qty = 1;
     const updated = [...items];
     updated[index].quantity = qty;
+    setItems(updated);
+  };
+
+  // CHANGE UNIT
+  const changeUnit = (index, unit) => {
+    const updated = [...items];
+    updated[index].unit = unit;
     setItems(updated);
   };
 
@@ -582,7 +598,13 @@ const InvoicePage = () => {
       customerPhone: customer.phone.replace(/\D/g, ''),
       customerEmail: customer.email.trim() || '',
       customerAddress: customer.address.trim() || '',
-      customerGstin: customer.gstin.trim().toUpperCase() || '',
+      customerGstin: customer.gstin ? customer.gstin.trim().toUpperCase() : '',
+      attn: (customer.attn || '').trim(),
+      yourPoNo: yourPoNo.trim(),
+      ourDoNo: ourDoNo.trim(),
+      bankName: bankName.trim(),
+      accountNo: accountNo.trim(),
+      bankCode: bankCode.trim(),
       invoiceDate,
       dueDate,
       discountType,
@@ -594,6 +616,7 @@ const InvoicePage = () => {
       items: items.map((item) => ({ 
         productId: item.productId, 
         quantity: item.quantity,
+        unit: item.unit || 'nos',
         price: item.price,
         hsnCode: item.hsnCode,
         gst: item.gst || 0
@@ -693,260 +716,572 @@ const InvoicePage = () => {
   // Function to print invoice
   const handlePrintInvoice = (invoice) => {
     const printWindow = window.open('', '_blank');
-    
-    if (printWindow) {
-      const itemsHtml = invoice.items?.map(item => `
-        <tr>
-          <td style="padding: 8px; border: 1px solid #ddd;">${item.product_name || item.productName} ${item.product_model ? `(${item.product_model})` : ''}</td>
-          <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.hsn_code || item.hsnCode || '-'}</td>
-          <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.quantity}</td>
-          <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">₹${safeNumber(item.price).toFixed(2)}</td>
-          <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${safeNumber(item.gst_rate || item.gst)}%</td>
-          <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">₹${safeNumber(item.total).toFixed(2)}</td>
-        </tr>
-      `).join('') || '';
+    if (!printWindow) {
+      alert('Please allow pop-ups to print the invoice');
+      return;
+    }
 
-      const printContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Invoice ${invoice.invoice_number || invoice.invoiceNumber}</title>
-          <style>
-            body { 
-              font-family: Arial, sans-serif; 
-              margin: 40px; 
-              color: #333;
-              line-height: 1.6;
-            }
-            .header { 
-              text-align: center; 
-              margin-bottom: 30px; 
-              border-bottom: 2px solid #2563eb;
-              padding-bottom: 20px;
-            }
-            .company-name { 
-              font-size: 28px; 
-              font-weight: bold; 
-              color: #2563eb;
-              margin-bottom: 5px;
-            }
-            .company-details {
-              font-size: 14px;
-              color: #666;
-            }
-            .document-title {
-              font-size: 24px;
-              font-weight: bold;
-              text-align: center;
-              margin: 20px 0;
-              color: #2563eb;
-            }
-            .details-container {
-              display: flex;
-              justify-content: space-between;
-              margin: 20px 0;
-            }
-            .left-details, .right-details {
-              width: 48%;
-            }
-            .detail-box {
-              background: #f8fafc;
-              padding: 15px;
-              border-radius: 8px;
-              border: 1px solid #e2e8f0;
-            }
-            .detail-box h3 {
-              margin-top: 0;
-              margin-bottom: 10px;
-              color: #2563eb;
-              font-size: 16px;
-            }
-            table { 
-              width: 100%; 
-              border-collapse: collapse; 
-              margin: 20px 0; 
-            }
-            th { 
-              background: #2563eb; 
-              color: white; 
-              padding: 12px; 
-              text-align: left; 
-              font-size: 14px;
-            }
-            td { 
-              padding: 8px; 
-              border: 1px solid #ddd; 
-            }
-            .summary { 
-              background: #f8fafc; 
-              padding: 20px; 
-              border-radius: 8px; 
-              text-align: right; 
-            }
-            .summary-item {
-              margin-bottom: 5px;
-            }
-            .total { 
-              font-size: 20px; 
-              font-weight: bold; 
-              color: #2563eb; 
-              margin-top: 10px;
-              padding-top: 10px;
-              border-top: 2px solid #ddd;
-            }
-            .status-badge { 
-              padding: 5px 10px; 
-              border-radius: 4px; 
-              font-weight: bold; 
-              display: inline-block;
-            }
-            .status-paid { 
-              background: #10b981; 
-              color: white; 
-            }
-            .status-unpaid { 
-              background: #ef4444; 
-              color: white; 
-            }
-            .status-partial { 
-              background: #f59e0b; 
-              color: white; 
-            }
-            .footer { 
-              margin-top: 50px; 
-              text-align: center; 
-              font-size: 12px; 
-              color: #666;
-              border-top: 1px solid #ddd;
-              padding-top: 20px;
-            }
-            .signature {
-              display: flex;
-              justify-content: space-between;
-              margin-top: 40px;
-            }
-            .signature-line {
-              width: 200px;
-              border-bottom: 1px solid #333;
-              margin-top: 5px;
-            }
-            .amount-words {
-              font-style: italic;
-              color: #2563eb;
-              margin-top: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <img src="/avva-logo.jpeg" alt="Avva Inventory Logo" style="max-width: 150px; margin-bottom: 10px;">
-            <div class="company-name">Avva Inventory</div>
-            <div class="company-details">No.71, M.T.H.road (Opp padi post office), Padi, Chennai - 600 050</div>
-            <div class="company-details">Phone: 98657 09626 | Email: hiprintsolutions@gmail.com | GST: 33ABCDE1234F1Z5</div>
+    const formatDisplayDate = (dateString) => {
+      if (!dateString) return '';
+      try {
+        const d = new Date(dateString);
+        if (isNaN(d.getTime())) return dateString;
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+      } catch (e) {
+        return dateString;
+      }
+    };
+
+    const items = invoice.items || [];
+    const totalRowsCount = Math.max(15, items.length);
+
+    let rowsHtml = '';
+    for (let i = 0; i < totalRowsCount; i++) {
+      const rowNo = i + 1;
+      if (i < items.length) {
+        const item = items[i];
+        const desc = (item.product_name || item.productName || '') + (item.product_model ? ` (${item.product_model})` : '');
+        const qty = item.quantity !== undefined ? item.quantity : '';
+        const unit = item.unit || 'nos';
+        const price = safeNumber(item.price).toFixed(2);
+        const amount = safeNumber(item.total || (item.price * item.quantity)).toFixed(2);
+        rowsHtml += `
+          <tr>
+            <td class="col-no">${rowNo}</td>
+            <td class="col-desc">${desc}</td>
+            <td class="col-qty">${qty}</td>
+            <td class="col-unit">${unit}</td>
+            <td class="col-price">${price}</td>
+            <td class="col-amount">${amount}</td>
+          </tr>
+        `;
+      } else {
+        rowsHtml += `
+          <tr>
+            <td class="col-no">${rowNo}</td>
+            <td class="col-desc"></td>
+            <td class="col-qty"></td>
+            <td class="col-unit"></td>
+            <td class="col-price"></td>
+            <td class="col-amount"></td>
+          </tr>
+        `;
+      }
+    }
+
+    const totalAmount = safeNumber(invoice.total).toFixed(2);
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Invoice ${invoice.invoice_number || invoice.invoiceNumber || 'PQM-INV'}</title>
+        <style>
+          * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          @page {
+            size: A4 portrait;
+            margin: 8mm 12mm 8mm 12mm;
+          }
+          body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 10px 15px;
+            color: #000;
+            background: #fff;
+            font-size: 11px;
+            line-height: 1.25;
+          }
+          .invoice-container {
+            width: 100%;
+            max-width: 780px;
+            margin: 0 auto;
+          }
+          /* Header */
+          .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2px;
+          }
+          .header-left {
+            width: 130px;
+            vertical-align: middle;
+            text-align: left;
+          }
+          .header-left img {
+            width: 115px;
+            height: auto;
+            display: block;
+          }
+          .header-center {
+            text-align: center;
+            vertical-align: middle;
+            padding: 0 10px;
+          }
+          .header-right {
+            width: 90px;
+            vertical-align: middle;
+            text-align: right;
+          }
+          .header-right img {
+            width: 58px;
+            height: auto;
+            display: inline-block;
+          }
+          .company-name {
+            color: #0b2f6b;
+            font-size: 13.5pt;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+          }
+          .company-tags {
+            color: #0284c7;
+            font-size: 8.5pt;
+            font-weight: 600;
+            margin-bottom: 3px;
+          }
+          .company-tags span {
+            margin: 0 1px;
+          }
+          .company-info {
+            color: #555;
+            font-size: 8pt;
+            line-height: 1.35;
+          }
+          .company-info strong {
+            color: #333;
+          }
+          /* Divider */
+          .divider-container {
+            margin-top: 8px;
+            margin-bottom: 12px;
+          }
+          .divider-thick {
+            height: 2.5px;
+            background-color: #022362;
+          }
+          .divider-gap {
+            height: 2px;
+          }
+          .divider-thin {
+            height: 1.5px;
+            background-color: #46a8e5;
+          }
+          /* Document Title */
+          .doc-title {
+            text-align: center;
+            color: #0b2f6b;
+            font-size: 15pt;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+          }
+          /* Details Box */
+          .meta-wrapper {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            width: 100%;
+          }
+          .meta-table {
+            border-collapse: collapse;
+          }
+          .meta-left {
+            width: 58%;
+          }
+          .meta-left .meta-label {
+            width: 65px;
+          }
+          .meta-right {
+            width: 40%;
+          }
+          .meta-right .meta-label {
+            width: 95px;
+          }
+          .meta-label {
+            color: #0b2f6b;
+            font-weight: bold;
+            font-size: 8.5pt;
+            padding: 2px 4px 2px 0;
+            vertical-align: middle;
+            white-space: nowrap;
+          }
+          .meta-val {
+            background-color: #fff9db !important;
+            font-size: 8.5pt;
+            padding: 2px 6px;
+            color: #000;
+            height: 18px;
+            vertical-align: middle;
+          }
+          /* Items Table */
+          .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+          }
+          .items-table th {
+            background-color: #0b2f6b !important;
+            color: #ffffff !important;
+            font-weight: bold;
+            font-size: 8.5pt;
+            padding: 4px 2px;
+            border: 1px solid #9ca3af;
+            text-align: center;
+            vertical-align: middle;
+          }
+          .items-table td {
+            font-size: 8.5pt;
+            padding: 2.5px 5px;
+            border: 1px solid #9ca3af;
+            height: 18px;
+            line-height: 1.2;
+          }
+          .col-no {
+            width: 6%;
+            text-align: center;
+            background-color: #ffffff !important;
+          }
+          .col-desc {
+            width: 46%;
+            text-align: left;
+            background-color: #fff9db !important;
+            white-space: pre-wrap;
+            word-break: break-word;
+          }
+          .col-qty {
+            width: 7%;
+            text-align: center;
+            background-color: #fff9db !important;
+          }
+          .col-unit {
+            width: 7%;
+            text-align: center;
+            background-color: #fff9db !important;
+          }
+          .col-price {
+            width: 17%;
+            text-align: right;
+            background-color: #fff9db !important;
+          }
+          .col-amount {
+            width: 17%;
+            text-align: right;
+            background-color: #ffffff !important;
+          }
+          /* Total & GST notice bar */
+          .bottom-bar {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0;
+            table-layout: fixed;
+          }
+          .gst-note-cell {
+            width: 66%;
+            font-style: italic;
+            font-size: 8pt;
+            color: #666;
+            vertical-align: top;
+            padding-top: 4px;
+            padding-left: 2px;
+            text-align: left;
+          }
+          .total-label-cell {
+            width: 17%;
+            background-color: #0b2f6b !important;
+            color: #ffffff !important;
+            font-weight: bold;
+            text-align: center;
+            font-size: 8.5pt;
+            padding: 4px 6px;
+            border-left: 1px solid #0b2f6b;
+            border-right: 1px solid #0b2f6b;
+            border-bottom: 1px solid #0b2f6b;
+          }
+          .total-value-cell {
+            width: 17%;
+            background-color: #ffffff !important;
+            color: #000;
+            font-weight: bold;
+            text-align: right;
+            font-size: 8.5pt;
+            padding: 4px 5px;
+            border-right: 1px solid #9ca3af;
+            border-bottom: 1px solid #9ca3af;
+            border-left: 1px solid #9ca3af;
+          }
+          /* Payment details */
+          .section-heading {
+            color: #0b2f6b;
+            font-size: 9pt;
+            font-weight: bold;
+            margin-top: 8px;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+          }
+          .payment-table {
+            border-collapse: collapse;
+            font-size: 8.5pt;
+            width: 80%;
+          }
+          .pay-label {
+            font-weight: bold;
+            color: #000;
+            width: 140px;
+            padding: 1.5px 0;
+            vertical-align: middle;
+            white-space: nowrap;
+          }
+          .pay-val {
+            color: #000;
+            padding: 1.5px 6px;
+            vertical-align: middle;
+          }
+          .pay-highlight-row {
+            background-color: #fff9db !important;
+          }
+          .payment-subtext {
+            font-size: 7.5pt;
+            font-style: italic;
+            color: #777;
+            margin-top: 3px;
+            margin-bottom: 8px;
+          }
+          /* Terms */
+          .terms-ol {
+            margin: 2px 0 0 0;
+            padding-left: 14px;
+            font-size: 7.5pt;
+            line-height: 1.35;
+            color: #000;
+          }
+          .terms-ol li {
+            margin-bottom: 2px;
+          }
+          /* Signatures */
+          .signatures-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            margin-bottom: 12px;
+          }
+          .sig-block {
+            width: 44%;
+          }
+          .sig-title {
+            font-weight: bold;
+            font-size: 8.5pt;
+            color: #000;
+            margin-bottom: 38px;
+          }
+          .sig-line {
+            border-bottom: 1.2px solid #000;
+            width: 100%;
+            margin-bottom: 4px;
+          }
+          .sig-legend {
+            font-size: 7.5pt;
+            color: #666;
+          }
+          /* Page footer */
+          .page-footer {
+            text-align: center;
+            font-size: 7.5pt;
+            color: #555;
+            margin-top: 8px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-container">
+          <!-- Top Header -->
+          <table class="header-table">
+            <tr>
+              <td class="header-left">
+                <img src="${POWERQ_LOGO_BASE64}" alt="PowerQ Max Logo" />
+              </td>
+              <td class="header-center">
+                <div class="company-name">POWERQ MAX ENGINEERING PTE LTD</div>
+                <div class="company-tags">
+                  <span>Electrical</span> &bull; 
+                  <span>BMS</span> &bull; 
+                  <span>ELV &amp; Security</span> &bull; 
+                  <span>Fire Alarm</span> &bull; 
+                  <span>Renovation</span> &bull; 
+                  <span>IT</span>
+                </div>
+                <div class="company-info">Company Registration No. (UEN): 202649167W</div>
+                <div class="company-info">10 Jalan Besar, #15-02, Sim Lim Tower, Singapore 208787</div>
+                <div class="company-info"><strong>Tel:</strong> +65 9860 4001 &nbsp;|&nbsp; <strong>Email:</strong> powerqmaxengineering@gmail.com</div>
+              </td>
+              <td class="header-right">
+                <img src="${BCA_LOGO_BASE64}" alt="BCA Registered Contractor" />
+              </td>
+            </tr>
+          </table>
+
+          <!-- Double line divider -->
+          <div class="divider-container">
+            <div class="divider-thick"></div>
+            <div class="divider-gap"></div>
+            <div class="divider-thin"></div>
           </div>
-          
-          <div class="document-title">TAX INVOICE</div>
-          
-          <div class="details-container">
-            <div class="left-details">
-              <div class="detail-box">
-                <h3>Bill To:</h3>
-                <p><strong>${invoice.customer_name || invoice.customerName}</strong></p>
-                <p>Phone: ${invoice.customer_phone || invoice.customerPhone}</p>
-                ${(invoice.customer_email || invoice.customerEmail) ? `<p>Email: ${invoice.customer_email || invoice.customerEmail}</p>` : ''}
-                ${(invoice.customer_address || invoice.customerAddress) ? `<p>Address: ${invoice.customer_address || invoice.customerAddress}</p>` : ''}
-                ${(invoice.customer_gstin || invoice.customerGstin) ? `<p>GSTIN: ${invoice.customer_gstin || invoice.customerGstin}</p>` : ''}
-              </div>
-            </div>
-            
-            <div class="right-details">
-              <div class="detail-box">
-                <h3>Invoice Details:</h3>
-                <p><strong>Invoice No:</strong> ${invoice.invoice_number || invoice.invoiceNumber}</p>
-                <p><strong>Date:</strong> ${formatDate(invoice.invoice_date || invoice.invoiceDate)}</p>
-                <p><strong>Due Date:</strong> ${formatDate(invoice.due_date || invoice.dueDate)}</p>
-                <p><strong>Payment Status:</strong> <span class="status-badge status-${invoice.payment_status || invoice.paymentStatus || 'unpaid'}">${(invoice.payment_status || invoice.paymentStatus || 'UNPAID').toUpperCase()}</span></p>
-                <p><strong>Payment Method:</strong> ${(invoice.payment_method || invoice.paymentMethod || 'cash').toUpperCase()}</p>
-                <p><strong>Transaction Type:</strong> ${safeNumber(invoice.igst_total || invoice.igstTotal) > 0 ? 'Inter-State (IGST)' : 'Intra-State (CGST+SGST)'}</p>
-              </div>
-            </div>
+
+          <!-- Document Title -->
+          <div class="doc-title">INVOICE</div>
+
+          <!-- Metadata Section -->
+          <div class="meta-wrapper">
+            <table class="meta-table meta-left">
+              <tr>
+                <td class="meta-label">To:</td>
+                <td class="meta-val">${invoice.customer_name || invoice.customerName || ''}</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Attn:</td>
+                <td class="meta-val">${invoice.attn || ''}</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Address:</td>
+                <td class="meta-val">${invoice.customer_address || invoice.customerAddress || ''}</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Tel:</td>
+                <td class="meta-val">${invoice.customer_phone || invoice.customerPhone || ''}</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Email:</td>
+                <td class="meta-val">${invoice.customer_email || invoice.customerEmail || ''}</td>
+              </tr>
+            </table>
+
+            <table class="meta-table meta-right">
+              <tr>
+                <td class="meta-label">Invoice No.:</td>
+                <td class="meta-val">${invoice.invoice_number || invoice.invoiceNumber || 'PQM-INV-0001'}</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Date:</td>
+                <td class="meta-val">${formatDisplayDate(invoice.invoice_date || invoice.invoiceDate)}</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Your PO No.:</td>
+                <td class="meta-val">${invoice.your_po_no || invoice.yourPoNo || ''}</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Our DO No.:</td>
+                <td class="meta-val">${invoice.our_do_no || invoice.ourDoNo || ''}</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Due Date:</td>
+                <td class="meta-val">${formatDisplayDate(invoice.due_date || invoice.dueDate)}</td>
+              </tr>
+            </table>
           </div>
-          
-          <table>
+
+          <!-- Items Table -->
+          <table class="items-table">
             <thead>
               <tr>
-                <th>Product Description</th>
-                <th>HSN</th>
-                <th>Qty</th>
-                <th>Unit Price</th>
-                <th>GST%</th>
-                <th>Total</th>
+                <th style="width: 6%;">No.</th>
+                <th style="width: 46%;">Description</th>
+                <th style="width: 7%;">Qty</th>
+                <th style="width: 7%;">Unit</th>
+                <th style="width: 17%;">Unit Price<br/>(SGD)</th>
+                <th style="width: 17%;">Amount (SGD)</th>
               </tr>
             </thead>
             <tbody>
-              ${itemsHtml}
+              ${rowsHtml}
             </tbody>
           </table>
-          
-          <div class="summary">
-            <div class="summary-item"><strong>Subtotal:</strong> ₹${safeNumber(invoice.subtotal).toFixed(2)}</div>
-            ${invoice.discount > 0 ? `<div class="summary-item"><strong>Discount:</strong> -₹${safeNumber(invoice.discount).toFixed(2)}</div>` : ''}
-            <div class="summary-item"><strong>Taxable Amount:</strong> ₹${(safeNumber(invoice.subtotal) - safeNumber(invoice.discount)).toFixed(2)}</div>
-            ${invoice.cgst_total > 0 ? `<div class="summary-item"><strong>CGST:</strong> ₹${safeNumber(invoice.cgst_total).toFixed(2)}</div>` : ''}
-            ${invoice.sgst_total > 0 ? `<div class="summary-item"><strong>SGST:</strong> ₹${safeNumber(invoice.sgst_total).toFixed(2)}</div>` : ''}
-            ${invoice.igst_total > 0 ? `<div class="summary-item"><strong>IGST:</strong> ₹${safeNumber(invoice.igst_total).toFixed(2)}</div>` : ''}
-            <hr>
-            <div class="total"><strong>Total:</strong> ₹${safeNumber(invoice.total).toFixed(2)}</div>
-            <div class="amount-words"><strong>Amount in Words:</strong> ${numberToWords(safeNumber(invoice.total))} Only</div>
+
+          <!-- GST Notice & Total Due -->
+          <table class="bottom-bar">
+            <tr>
+              <td class="gst-note-cell">Not GST-registered &ndash; no GST charged.</td>
+              <td class="total-label-cell">TOTAL DUE</td>
+              <td class="total-value-cell">${totalAmount}</td>
+            </tr>
+          </table>
+
+          <!-- Payment Details -->
+          <div class="section-heading">PAYMENT DETAILS</div>
+          <table class="payment-table">
+            <tr>
+              <td class="pay-label">Account Name:</td>
+              <td class="pay-val">PowerQ Max Engineering Pte Ltd</td>
+            </tr>
+            <tr>
+              <td class="pay-label">Bank:</td>
+              <td class="pay-val pay-highlight-row">${invoice.bank_name || invoice.bankName || '[Bank name]'}</td>
+            </tr>
+            <tr>
+              <td class="pay-label">Account No.:</td>
+              <td class="pay-val pay-highlight-row">${invoice.account_no || invoice.accountNo || '[Account number]'}</td>
+            </tr>
+            <tr>
+              <td class="pay-label">Bank Code / SWIFT:</td>
+              <td class="pay-val pay-highlight-row">${invoice.bank_code || invoice.bankCode || '[Code]'}</td>
+            </tr>
+            <tr>
+              <td class="pay-label">PayNow (UEN):</td>
+              <td class="pay-val">202649167W</td>
+            </tr>
+          </table>
+          <div class="payment-subtext">Please quote the invoice number as your payment reference.</div>
+
+          <!-- Terms & Conditions -->
+          <div class="section-heading">TERMS &amp; CONDITIONS</div>
+          <ol class="terms-ol">
+            <li>Payment terms: within 30 days from the invoice date.</li>
+            <li>Goods sold and works done remain the property of PowerQ Max Engineering Pte Ltd until full payment is received.</li>
+            <li>Please raise any queries on this invoice within 7 days of the invoice date.</li>
+            <li>Payment by bank transfer or PayNow only. In line with the phase-out of cheques in Singapore, cheques will not be accepted from 1 January 2027.</li>
+          </ol>
+
+          <!-- Signatures -->
+          <div class="signatures-container">
+            <div class="sig-block">
+              <div class="sig-title">For PowerQ Max Engineering Pte Ltd</div>
+              <div class="sig-line"></div>
+              <div class="sig-legend">Name / Signature / Company Stamp / Date</div>
+            </div>
+            <div class="sig-block">
+              <div class="sig-title">Received by Customer</div>
+              <div class="sig-line"></div>
+              <div class="sig-legend">Name / Signature / Company Stamp / Date</div>
+            </div>
           </div>
-          
-          ${invoice.notes ? `
-            <div style="margin-top: 30px; padding: 15px; background: #f8fafc; border-radius: 8px;">
-              <h4 style="margin-top: 0; color: #2563eb;">Terms & Conditions:</h4>
-              <p>${invoice.notes}</p>
-            </div>
-          ` : `
-            <div style="margin-top: 30px; padding: 15px; background: #f8fafc; border-radius: 8px;">
-              <h4 style="margin-top: 0; color: #2563eb;">Terms & Conditions:</h4>
-              <ul style="margin:0; padding-left:20px;">
-                <li>Goods once sold will not be taken back</li>
-                <li>Payment due by due date</li>
-                <li>Interest @ 24% p.a. will be charged on delayed payments</li>
-                <li>Subject to Chennai jurisdiction</li>
-              </ul>
-            </div>
-          `}
-          
-          <div class="signature">
-            <div>
-              <p><strong>For Avva Inventory</strong></p>
-              <div class="signature-line"></div>
-              <p>Authorized Signatory</p>
-            </div>
-            <div>
-              <p><strong>Customer Signature</strong></p>
-              <div class="signature-line"></div>
-            </div>
-          </div>
-          
-          <div class="footer">
-            <p>This is a computer generated invoice. Valid without signature.</p>
-            <p>Thank you for your business!</p>
-          </div>
-        </body>
-        </html>
-      `;
-      
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-      printWindow.focus();
-      
-      setTimeout(() => {
-        printWindow.print();
-      }, 500);
-    } else {
-      alert('Please allow pop-ups to print the invoice');
-    }
+
+          <!-- Footer -->
+          <div class="page-footer">Page 1 of 1</div>
+        </div>
+
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+            }, 300);
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(printContent);
+    printWindow.document.close();
   };
 
   // Show login required message if not authenticated
@@ -1229,6 +1564,7 @@ const InvoicePage = () => {
                     <h4 style={styles.viewSectionTitle}>Bill To:</h4>
                     <div style={styles.viewCard}>
                       <p><strong>{viewingInvoice.customer_name || viewingInvoice.customerName}</strong></p>
+                      {viewingInvoice.attn && <p><strong>Attn:</strong> {viewingInvoice.attn}</p>}
                       <p>Phone: {viewingInvoice.customer_phone || viewingInvoice.customerPhone}</p>
                       {(viewingInvoice.customer_email || viewingInvoice.customerEmail) && <p>Email: {viewingInvoice.customer_email || viewingInvoice.customerEmail}</p>}
                       {(viewingInvoice.customer_address || viewingInvoice.customerAddress) && <p>Address: {viewingInvoice.customer_address || viewingInvoice.customerAddress}</p>}
@@ -1244,6 +1580,8 @@ const InvoicePage = () => {
                       <p><strong>Invoice No:</strong> {viewingInvoice.invoice_number || viewingInvoice.invoiceNumber}</p>
                       <p><strong>Date:</strong> {formatDate(viewingInvoice.invoice_date || viewingInvoice.invoiceDate)}</p>
                       <p><strong>Due Date:</strong> {formatDate(viewingInvoice.due_date || viewingInvoice.dueDate)}</p>
+                      {(viewingInvoice.your_po_no || viewingInvoice.yourPoNo) && <p><strong>Your PO No:</strong> {viewingInvoice.your_po_no || viewingInvoice.yourPoNo}</p>}
+                      {(viewingInvoice.our_do_no || viewingInvoice.ourDoNo) && <p><strong>Our DO No:</strong> {viewingInvoice.our_do_no || viewingInvoice.ourDoNo}</p>}
                       <p><strong>Payment Method:</strong> {(viewingInvoice.payment_method || viewingInvoice.paymentMethod || 'cash').toUpperCase()}</p>
                       <p><strong>Transaction Type:</strong> {safeNumber(viewingInvoice.igst_total || viewingInvoice.igstTotal) > 0 ? 'Inter-State (IGST)' : 'Intra-State (CGST+SGST)'}</p>
                     </div>
@@ -1261,6 +1599,7 @@ const InvoicePage = () => {
                         <th style={styles.th}>HSN</th>
                         <th style={styles.th}>Price</th>
                         <th style={styles.th}>Qty</th>
+                        <th style={styles.th}>Unit</th>
                         <th style={styles.th}>GST%</th>
                         <th style={styles.th}>CGST</th>
                         <th style={styles.th}>SGST</th>
@@ -1278,6 +1617,7 @@ const InvoicePage = () => {
                           <td style={styles.td}>{item.hsn_code || item.hsnCode || '-'}</td>
                           <td style={styles.td}>₹{safeNumber(item.price).toFixed(2)}</td>
                           <td style={styles.td}>{item.quantity}</td>
+                          <td style={styles.td}>{item.unit || 'nos'}</td>
                           <td style={styles.td}>{safeNumber(item.gst_rate || item.gst)}%</td>
                           <td style={styles.td}>₹{safeNumber(item.cgst).toFixed(2)}</td>
                           <td style={styles.td}>₹{safeNumber(item.sgst).toFixed(2)}</td>
@@ -1391,11 +1731,21 @@ const InvoicePage = () => {
                         style={{...styles.input, borderColor: customerErrors.name ? '#ef4444' : '#334155'}}
                         value={customer.name} 
                         onChange={(e) => setCustomer({ ...customer, name: e.target.value })} 
-                        placeholder="Enter customer name"
+                        placeholder="Enter customer / company name"
                       />
                       {customerErrors.name && (
                         <span style={styles.errorText}>{customerErrors.name}</span>
                       )}
+                    </div>
+
+                    <div style={styles.formField}>
+                      <label style={styles.label}>Attn (Contact Person)</label>
+                      <input 
+                        style={styles.input} 
+                        value={customer.attn || ''} 
+                        onChange={(e) => setCustomer({ ...customer, attn: e.target.value })} 
+                        placeholder="e.g. Mr. John Tan"
+                      />
                     </div>
                     
                     <div style={styles.formField}>
@@ -1404,8 +1754,7 @@ const InvoicePage = () => {
                         style={{...styles.input, borderColor: customerErrors.phone ? '#ef4444' : '#334155'}}
                         value={customer.phone} 
                         onChange={(e) => setCustomer({ ...customer, phone: e.target.value })} 
-                        placeholder="10 digit mobile number"
-                        maxLength="10"
+                        placeholder="e.g. 98604001 or +65 9860 4001"
                       />
                       {customerErrors.phone && (
                         <span style={styles.errorText}>{customerErrors.phone}</span>
@@ -1435,19 +1784,35 @@ const InvoicePage = () => {
                         placeholder="Enter address"
                       />
                     </div>
+
+                    <div style={styles.formField}>
+                      <label style={styles.label}>Your PO No.</label>
+                      <input 
+                        style={styles.input} 
+                        value={yourPoNo} 
+                        onChange={(e) => setYourPoNo(e.target.value)} 
+                        placeholder="Customer Purchase Order No."
+                      />
+                    </div>
+
+                    <div style={styles.formField}>
+                      <label style={styles.label}>Our DO No.</label>
+                      <input 
+                        style={styles.input} 
+                        value={ourDoNo} 
+                        onChange={(e) => setOurDoNo(e.target.value)} 
+                        placeholder="Delivery Order No."
+                      />
+                    </div>
                     
                     <div style={styles.formField}>
-                      <label style={styles.label}>GSTIN (Optional)</label>
+                      <label style={styles.label}>UEN / GSTIN (Optional)</label>
                       <input 
-                        style={{...styles.input, borderColor: customerErrors.gstin ? '#ef4444' : '#334155'}}
+                        style={styles.input} 
                         value={customer.gstin} 
                         onChange={(e) => setCustomer({ ...customer, gstin: e.target.value.toUpperCase() })} 
-                        placeholder="22AAAAA0000A1Z5"
-                        maxLength="15"
+                        placeholder="Registration / Tax ID"
                       />
-                      {customerErrors.gstin && (
-                        <span style={styles.errorText}>{customerErrors.gstin}</span>
-                      )}
                     </div>
                   </div>
 
@@ -1529,6 +1894,7 @@ const InvoicePage = () => {
                             <th style={styles.th}>HSN</th>
                             <th style={styles.th}>Price</th>
                             <th style={styles.th}>Qty</th>
+                            <th style={styles.th}>Unit</th>
                             <th style={styles.th}>GST%</th>
                             <th style={styles.th}>Total</th>
                             <th style={styles.th}>Action</th>
@@ -1550,6 +1916,15 @@ const InvoicePage = () => {
                                   value={item.quantity} 
                                   min="1"
                                   onChange={(e) => changeQty(index, parseInt(e.target.value) || 1)} 
+                                />
+                              </td>
+                              <td style={styles.td}>
+                                <input 
+                                  type="text" 
+                                  style={{...styles.qtyInput, width: '55px', textAlign: 'center'}} 
+                                  value={item.unit || 'nos'} 
+                                  onChange={(e) => changeUnit(index, e.target.value)} 
+                                  placeholder="nos"
                                 />
                               </td>
                               <td style={styles.td}>{item.gst}%</td>
@@ -1607,6 +1982,36 @@ const InvoicePage = () => {
                           <option value="unpaid">Unpaid</option>
                           <option value="partial">Partial</option>
                         </select>
+                      </div>
+
+                      <div style={styles.formField}>
+                        <label style={styles.label}>Bank Name</label>
+                        <input 
+                          style={styles.input} 
+                          value={bankName} 
+                          onChange={(e) => setBankName(e.target.value)} 
+                          placeholder="[Bank name]"
+                        />
+                      </div>
+
+                      <div style={styles.formField}>
+                        <label style={styles.label}>Account Number</label>
+                        <input 
+                          style={styles.input} 
+                          value={accountNo} 
+                          onChange={(e) => setAccountNo(e.target.value)} 
+                          placeholder="[Account number]"
+                        />
+                      </div>
+
+                      <div style={styles.formField}>
+                        <label style={styles.label}>Bank Code / SWIFT</label>
+                        <input 
+                          style={styles.input} 
+                          value={bankCode} 
+                          onChange={(e) => setBankCode(e.target.value)} 
+                          placeholder="[Code]"
+                        />
                       </div>
                     </div>
                   </div>

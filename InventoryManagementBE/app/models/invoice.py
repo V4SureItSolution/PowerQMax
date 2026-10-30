@@ -13,10 +13,13 @@ class Invoice(db.Model):
     customer_email = db.Column(db.String(100))
     customer_address = db.Column(db.Text)
     customer_gstin = db.Column(db.String(20))
+    attn = db.Column(db.String(100), nullable=True)
     
     # Invoice details
     invoice_date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
     due_date = db.Column(db.Date, nullable=False)
+    your_po_no = db.Column(db.String(100), nullable=True)
+    our_do_no = db.Column(db.String(100), nullable=True)
     
     # Financial details
     subtotal = db.Column(db.Float, default=0.0)
@@ -34,6 +37,9 @@ class Invoice(db.Model):
     payment_method = db.Column(db.String(20), default='cash')
     payment_status = db.Column(db.String(20), default='unpaid')
     payment_date = db.Column(db.DateTime, nullable=True)
+    bank_name = db.Column(db.String(100), nullable=True)
+    account_no = db.Column(db.String(100), nullable=True)
+    bank_code = db.Column(db.String(50), nullable=True)
     
     # Additional
     notes = db.Column(db.Text, default='')
@@ -106,6 +112,17 @@ class Invoice(db.Model):
             'customerAddress': self.customer_address or '',  # Keep both for compatibility
             'customer_gstin': self.customer_gstin or '',
             'customerGstin': self.customer_gstin or '',  # Keep both for compatibility
+            'attn': self.attn or '',
+            'your_po_no': self.your_po_no or '',
+            'yourPoNo': self.your_po_no or '',
+            'our_do_no': self.our_do_no or '',
+            'ourDoNo': self.our_do_no or '',
+            'bank_name': self.bank_name or '',
+            'bankName': self.bank_name or '',
+            'account_no': self.account_no or '',
+            'accountNo': self.account_no or '',
+            'bank_code': self.bank_code or '',
+            'bankCode': self.bank_code or '',
             'invoice_date': self.invoice_date.isoformat() if self.invoice_date else None,
             'invoiceDate': self.invoice_date.isoformat() if self.invoice_date else None,  # Keep both for compatibility
             'due_date': self.due_date.isoformat() if self.due_date else None,
@@ -155,6 +172,7 @@ class InvoiceItem(db.Model):
     product_name = db.Column(db.String(100), nullable=False)
     product_model = db.Column(db.String(50), default='')
     hsn_code = db.Column(db.String(20), default='')
+    unit = db.Column(db.String(20), default='nos')
     price = db.Column(db.Float, nullable=False, default=0.0)
     quantity = db.Column(db.Integer, nullable=False, default=1)
     gst_rate = db.Column(db.Float, default=0.0)
@@ -208,6 +226,7 @@ class InvoiceItem(db.Model):
             'productModel': self.product_model or '',  # Keep both for compatibility
             'hsn_code': self.hsn_code or '',
             'hsnCode': self.hsn_code or '',  # Keep both for compatibility
+            'unit': self.unit or 'nos',
             'price': float(self.price) if self.price is not None else 0,
             'quantity': int(self.quantity) if self.quantity is not None else 0,
             'gst_rate': float(self.gst_rate) if self.gst_rate is not None else 0,

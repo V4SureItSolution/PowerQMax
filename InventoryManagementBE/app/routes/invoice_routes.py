@@ -9,23 +9,20 @@ import traceback
 invoice_bp = Blueprint('invoice', __name__)
 
 def generate_invoice_number():
-    """Generate a unique invoice number"""
+    """Generate a unique invoice number in PQM-INV-XXXX format"""
     try:
-        today = datetime.now()
-        date_str = today.strftime('%Y%m%d')
-        
-        # Count invoices created today
-        count = Invoice.query.filter(
-            func.date(Invoice.created_at) == today.date()
-        ).count()
-        
-        # Format: INV-YYYYMMDD-XXX
-        seq = str(count + 1).zfill(3)
-        return f"INV-{date_str}-{seq}"
+        count = Invoice.query.count()
+        seq = str(count + 1).zfill(4)
+        num = f"PQM-INV-{seq}"
+        while Invoice.query.filter_by(invoice_number=num).first():
+            count += 1
+            seq = str(count + 1).zfill(4)
+            num = f"PQM-INV-{seq}"
+        return num
     except Exception as e:
         print(f"Error generating invoice number: {str(e)}")
         # Fallback: use timestamp
-        return f"INV-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        return f"PQM-INV-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
 @invoice_bp.route('/invoice', methods=['GET'])
 def get_invoices():
@@ -197,6 +194,12 @@ def create_invoice():
             customer_email=data.get('customerEmail', '').strip(),
             customer_address=data.get('customerAddress', '').strip(),
             customer_gstin=data.get('customerGstin', '').strip().upper(),
+            attn=data.get('attn', '').strip(),
+            your_po_no=data.get('yourPoNo', data.get('your_po_no', '')).strip(),
+            our_do_no=data.get('ourDoNo', data.get('our_do_no', '')).strip(),
+            bank_name=data.get('bankName', data.get('bank_name', '')).strip(),
+            account_no=data.get('accountNo', data.get('account_no', '')).strip(),
+            bank_code=data.get('bankCode', data.get('bank_code', '')).strip(),
             invoice_date=invoice_date,
             due_date=due_date,
             discount_type=data.get('discountType', 'fixed'),
@@ -258,6 +261,7 @@ def create_invoice():
                 product_name=product.name,
                 product_model=product.model or '',
                 hsn_code=item_data.get('hsnCode', ''),
+                unit=item_data.get('unit', 'nos') or 'nos',
                 price=price,
                 quantity=quantity,
                 gst_rate=float(item_data.get('gst', 0))
@@ -344,6 +348,18 @@ def update_invoice(id):
             invoice.customer_address = data['customerAddress'].strip()
         if 'customerGstin' in data:
             invoice.customer_gstin = data['customerGstin'].strip().upper()
+        if 'attn' in data:
+            invoice.attn = data['attn'].strip()
+        if 'yourPoNo' in data or 'your_po_no' in data:
+            invoice.your_po_no = data.get('yourPoNo', data.get('your_po_no', '')).strip()
+        if 'ourDoNo' in data or 'our_do_no' in data:
+            invoice.our_do_no = data.get('ourDoNo', data.get('our_do_no', '')).strip()
+        if 'bankName' in data or 'bank_name' in data:
+            invoice.bank_name = data.get('bankName', data.get('bank_name', '')).strip()
+        if 'accountNo' in data or 'account_no' in data:
+            invoice.account_no = data.get('accountNo', data.get('account_no', '')).strip()
+        if 'bankCode' in data or 'bank_code' in data:
+            invoice.bank_code = data.get('bankCode', data.get('bank_code', '')).strip()
         
         # Update dates with error handling
         if 'invoiceDate' in data:
@@ -451,6 +467,7 @@ def update_invoice(id):
                     product_name=product.name,
                     product_model=product.model or '',
                     hsn_code=item_data.get('hsnCode', ''),
+                    unit=item_data.get('unit', 'nos') or 'nos',
                     price=price,
                     quantity=quantity,
                     gst_rate=float(item_data.get('gst', 0))
