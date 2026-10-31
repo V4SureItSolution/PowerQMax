@@ -15,7 +15,7 @@ const AccessControl = () => {
 
   const modules = [
     { name: "Inventory", submodules: ["Products", "Categories", "Stock In", "Stock Out"] },
-    { name: "Billing", submodules: ["Bills", "Bill Reports", "Services", "Quotations", "Invoices"] },
+    { name: "Billing", submodules: ["Bills", "Bill Reports", "Services", "Quotations", "Invoices", "Delivery Orders"] },
     { name: "HR Management", submodules: ["Employees", "Attendance", "User Types", "Access Control"] },
     { name: "CRM", submodules: ["Enquiries"] }
   ];

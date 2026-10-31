@@ -40,6 +40,7 @@ def create_app():
     from app.routes.supplier_routes import supplier_bp
     from app.routes.quotation_routes import quotation_bp
     from app.routes.invoice_routes import invoice_bp
+    from app.routes.delivery_order_routes import delivery_order_bp
     from app.routes.service_routes import service_bp
     from app.routes.usertype_routes import user_type_bp
     from app.routes.employee_routes import employee_bp
@@ -58,6 +59,7 @@ def create_app():
     app.register_blueprint(supplier_bp)
     app.register_blueprint(quotation_bp, url_prefix='/api')
     app.register_blueprint(invoice_bp, url_prefix='/api')
+    app.register_blueprint(delivery_order_bp, url_prefix='/api')
     app.register_blueprint(service_bp)
     app.register_blueprint(user_type_bp)
     app.register_blueprint(employee_bp, url_prefix="/api")

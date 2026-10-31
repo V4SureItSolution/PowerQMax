@@ -54,6 +54,13 @@ const Sidebar = ({ isOpen }) => {
     // For other roles, check the permissions array
     if (!Array.isArray(userPermissions)) return false;
 
+    // Delivery orders permission can also inherit from invoices/quotations if not explicitly set
+    if (submodule_id === "delivery_orders") {
+      const hasDirect = userPermissions.some(p => p.submodule_id === "delivery_orders" && p.view === true);
+      if (hasDirect) return true;
+      return userPermissions.some(p => (p.submodule_id === "invoices" || p.submodule_id === "quotations") && p.view === true);
+    }
+
     const perm = userPermissions.find(p => p.submodule_id === submodule_id);
     return perm ? perm.view === true : false;
   };
@@ -253,7 +260,7 @@ const Sidebar = ({ isOpen }) => {
           )}
 
           {/* Billing Section */}
-          {isSectionVisible(["create_bill", "bill_reports", "service_bill", "service_bills", "sales_bills", "quotations", "invoices", "discount"]) && (
+          {isSectionVisible(["create_bill", "bill_reports", "service_bill", "service_bills", "sales_bills", "quotations", "invoices", "delivery_orders", "discount"]) && (
             <>
               <div style={styles.sectionTitle}>Billing</div>
               {hasPermission("create_bill") && (
@@ -302,6 +309,13 @@ const Sidebar = ({ isOpen }) => {
                 <NavLink to="/invoice" style={getLinkStyle}>
                   <FaFileInvoiceDollar style={styles.icon} />
                   <span style={styles.text}>Invoices</span>
+                </NavLink>
+              )}
+
+              {hasPermission("delivery_orders") && (
+                <NavLink to="/delivery-order" style={getLinkStyle}>
+                  <FaTruck style={styles.icon} />
+                  <span style={styles.text}>Delivery Orders</span>
                 </NavLink>
               )}
 
