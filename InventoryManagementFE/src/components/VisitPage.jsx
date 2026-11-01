@@ -77,7 +77,7 @@ const VisitBillPage = () => {
   
   // Company/Shop Details from Backend
   const [companyDetails, setCompanyDetails] = useState({
-    name: "Avva Inventory",
+    name: "PowerQMax",
     address: "No.71, M.T.H.road (Opp padi post office)",
     city: "Padi, Chennai - 600 050",
     phone: "98657 09626",
@@ -183,7 +183,7 @@ const VisitBillPage = () => {
       } else {
         // Use default company details
         setCompanyDetails({
-          name: "Avva Inventory",
+          name: "PowerQMax",
           address: "No.71, M.T.H.road (Opp padi post office)",
           city: "Padi, Chennai - 600 050",
           phone: "98657 09626",
@@ -198,7 +198,7 @@ const VisitBillPage = () => {
       showMessage("error", "❌ Failed to fetch company details");
       // Use default company details
       setCompanyDetails({
-        name: "Avva Inventory",
+        name: "PowerQMax",
         address: "No.71, M.T.H.road (Opp padi post office)",
         city: "Padi, Chennai - 600 050",
         phone: "93423 01582",
@@ -220,7 +220,7 @@ const VisitBillPage = () => {
       
       const company = response.data;
       setCompanyDetails({
-        name: company.name || "Avva Inventory",
+        name: company.name || "PowerQMax",
         address: company.address || "No.71, M.T.H.road (Opp padi post office)",
         city: company.city || "Padi, Chennai - 600 050",
         phone: company.phone || "93423 01582",
@@ -1022,7 +1022,7 @@ const VisitBillPage = () => {
         </head>
         <body>
           <div class="header">
-            <img src="/avva-logo.jpeg" class="logo" alt="Avva Inventory Logo" />
+            <img src="/powerq_logo.png" class="logo" alt="PowerQMax Logo" />
             <h1>${companyDetails.name}</h1>
             <p>${companyDetails.address}</p>
             <p>${companyDetails.city}</p>
