@@ -140,3 +140,134 @@ class DeliveryOrderItem(db.Model):
             'remarks': self.remarks or ''
         }
 
+
+
+def ensure_delivery_order_schema(engine=None):
+    """
+    Ensure delivery_orders and delivery_order_items tables
+    have all required columns for the DeliveryOrder module
+    without affecting other modules.
+    """
+    try:
+        from sqlalchemy import inspect, text
+        target_engine = engine or db.engine
+        inspector = inspect(target_engine)
+        tables = inspector.get_table_names()
+
+        if 'delivery_orders' in tables:
+            columns = {c['name'] for c in inspector.get_columns('delivery_orders')}
+            with target_engine.connect() as conn:
+                col_defs = [
+                    ('customer_name', "VARCHAR(100) NULL AFTER do_number"),
+                    ('customer_phone', "VARCHAR(20) NULL AFTER attn"),
+                    ('customer_email', "VARCHAR(100) NULL AFTER customer_phone"),
+                    ('customer_address', "TEXT NULL AFTER customer_email"),
+                    ('do_date', "DATE NULL AFTER delivery_address"),
+                    ('invoice_no', "VARCHAR(100) NULL AFTER your_po_no"),
+                    ('quotation_no', "VARCHAR(100) NULL AFTER invoice_no"),
+                    ('delivery_method', "VARCHAR(50) DEFAULT 'Company Delivery' AFTER quotation_no"),
+                    ('vehicle_no', "VARCHAR(50) NULL AFTER delivery_method"),
+                    ('driver_name', "VARCHAR(100) NULL AFTER vehicle_no"),
+                    ('tracking_no', "VARCHAR(100) NULL AFTER driver_name"),
+                    ('prepared_by', "VARCHAR(100) NULL AFTER status"),
+                    ('received_date', "DATETIME NULL AFTER received_by"),
+                    ('total_quantity', "INT DEFAULT 0 AFTER received_date")
+                ]
+                for col_name, col_sql in col_defs:
+                    if col_name not in columns:
+                        try:
+                            conn.execute(text(f"ALTER TABLE delivery_orders ADD COLUMN {col_name} {col_sql}"))
+                            conn.commit()
+                        except Exception:
+                            pass
+
+                # If legacy columns exist and are NOT NULL, make them nullable so new inserts don't fail
+                try:
+                    conn.execute(text("ALTER TABLE delivery_orders MODIFY COLUMN to_customer VARCHAR(255) NULL"))
+                    conn.commit()
+                except Exception:
+                    pass
+                try:
+                    conn.execute(text("ALTER TABLE delivery_orders MODIFY COLUMN order_date DATE NULL"))
+                    conn.commit()
+                except Exception:
+                    pass
+
+        if 'delivery_order_items' in tables:
+            item_cols = {c['name'] for c in inspector.get_columns('delivery_order_items')}
+            with target_engine.connect() as conn:
+                item_col_defs = [
+                    ('product_name', "VARCHAR(150) NULL AFTER product_id"),
+                    ('product_model', "VARCHAR(50) DEFAULT '' AFTER product_name"),
+                    ('hsn_code', "VARCHAR(20) DEFAULT '' AFTER product_model")
+                ]
+                for col_name, col_sql in item_col_defs:
+                    if col_name not in item_cols:
+                        try:
+                            conn.execute(text(f"ALTER TABLE delivery_order_items ADD COLUMN {col_name} {col_sql}"))
+                            conn.commit()
+                        except Exception:
+                            pass
+
+                try:
+                    conn.execute(text("ALTER TABLE delivery_order_items MODIFY COLUMN description TEXT NULL"))
+                    conn.commit()
+                except Exception:
+                    pass
+
+        if 'invoices' in tables:
+            inv_cols = {c['name'] for c in inspector.get_columns('invoices')}
+            with target_engine.connect() as conn:
+                inv_defs = [
+                    ('attn', "VARCHAR(100) NULL AFTER customer_gstin"),
+                    ('your_po_no', "VARCHAR(100) NULL AFTER due_date"),
+                    ('our_do_no', "VARCHAR(100) NULL AFTER your_po_no"),
+                    ('bank_name', "VARCHAR(100) NULL AFTER payment_date"),
+                    ('account_no', "VARCHAR(100) NULL AFTER bank_name"),
+                    ('bank_code', "VARCHAR(50) NULL AFTER account_no")
+                ]
+                for col_name, col_sql in inv_defs:
+                    if col_name not in inv_cols:
+                        try:
+                            conn.execute(text(f"ALTER TABLE invoices ADD COLUMN {col_name} {col_sql}"))
+                            conn.commit()
+                        except Exception:
+                            pass
+
+        if 'invoice_items' in tables:
+            inv_item_cols = {c['name'] for c in inspector.get_columns('invoice_items')}
+            with target_engine.connect() as conn:
+                if 'unit' not in inv_item_cols:
+                    try:
+                        conn.execute(text("ALTER TABLE invoice_items ADD COLUMN unit VARCHAR(20) DEFAULT 'nos' AFTER hsn_code"))
+                        conn.commit()
+                    except Exception:
+                        pass
+
+        if 'quotations' in tables:
+            quot_cols = {c['name'] for c in inspector.get_columns('quotations')}
+            with target_engine.connect() as conn:
+                quot_defs = [
+                    ('attn', "VARCHAR(100) NULL AFTER customer_name"),
+                    ('project', "VARCHAR(150) NULL AFTER valid_until"),
+                    ('prepared_by', "VARCHAR(100) NULL AFTER project")
+                ]
+                for col_name, col_sql in quot_defs:
+                    if col_name not in quot_cols:
+                        try:
+                            conn.execute(text(f"ALTER TABLE quotations ADD COLUMN {col_name} {col_sql}"))
+                            conn.commit()
+                        except Exception:
+                            pass
+
+        if 'quotation_items' in tables:
+            quot_item_cols = {c['name'] for c in inspector.get_columns('quotation_items')}
+            with target_engine.connect() as conn:
+                if 'unit' not in quot_item_cols:
+                    try:
+                        conn.execute(text("ALTER TABLE quotation_items ADD COLUMN unit VARCHAR(20) DEFAULT 'nos' AFTER quantity"))
+                        conn.commit()
+                    except Exception:
+                        pass
+    except Exception as e:
+        print(f"Error in ensure_delivery_order_schema: {e}")

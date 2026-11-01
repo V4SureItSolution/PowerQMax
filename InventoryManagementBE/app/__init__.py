@@ -33,6 +33,14 @@ def create_app():
     # Import models so Flask-Migrate detects them
     from app import models
 
+    # Ensure delivery order schema has all required columns
+    with app.app_context():
+        try:
+            from app.models.delivery_order import ensure_delivery_order_schema
+            ensure_delivery_order_schema(db.engine)
+        except Exception as e:
+            print(f"Delivery order schema check skipped/failed: {e}")
+
     # Register Blueprints
     from app.routes.login_routes import login_bp
     from app.routes.product_routes import product_bp
