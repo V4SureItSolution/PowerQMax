@@ -21,6 +21,7 @@ import LowStock from "./components/Lowstock";
 import StockOut from "./components/StockOut";
 import Quotation from "./components/Quotation";
 import Invoice from "./components/Invoice";
+import DeliveryOrder from "./components/DeliveryOrder";
 import Service from "./components/ServiceBill";
 import ServiceBillView from "./components/ServiceBillView";
 import UserType from "./components/UserType";
@@ -82,9 +83,11 @@ function Layout() {
           <Route path="/stockout" element={<StockOut />} />
           <Route path="/quotation" element={<Quotation />} />
           <Route path="/invoice" element={<Invoice />} />
+          <Route path="/delivery-order" element={<DeliveryOrder />} />
+          <Route path="/deliveryorder" element={<DeliveryOrder />} />
           <Route path="/service" element={<Service/>}/>
           <Route path="/attendance" element={<Attendance />} />
-           <Route path="/userSettings" element={<UserSettings />} />
+          <Route path="/userSettings" element={<UserSettings />} />
 
           <Route path="/discount" element={<DiscountPage />} />
           <Route path="/Company" element={<CurrentCompany />} />

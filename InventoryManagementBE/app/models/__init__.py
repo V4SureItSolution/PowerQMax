@@ -3,6 +3,7 @@ from app.models.billing import Bill, BillItem, Payment
 from app.models.discount import DiscountRange, DiscountLog  
 from app.models.employee import Employee
 from app.models.invoice import Invoice, InvoiceItem
+from app.models.delivery_order import DeliveryOrder, DeliveryOrderItem, ensure_delivery_order_schema
 from app.models.login import login
 from app.models.product import Product
 from app.models.quotation import Quotation, QuotationItem
@@ -21,6 +22,9 @@ __all__ = [
     'Employee',
     'Invoice',
     'InvoiceItem',
+    'DeliveryOrder',
+    'DeliveryOrderItem',
+    'ensure_delivery_order_schema',
     'login',
     'Product',
     'Quotation',

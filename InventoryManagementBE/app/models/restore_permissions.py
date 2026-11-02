@@ -57,7 +57,7 @@ SUBMODULES = [
     
     # Billing module
     "create_bill", "bill_reports", "service_bill", "service_bills", 
-    "quotations", "invoices", "discount",
+    "quotations", "invoices", "delivery_orders", "discount",
     
     # Suppliers module
     "add_supplier", "supplier_list", "payment_tracking", "employee", 
@@ -108,7 +108,7 @@ PERMISSION_PRESETS = {
                 "view": True,
                 "add": True,
                 "edit": True,
-                "delete": True if submodule in ["products", "enquiries", "quotations", "invoices"] else False
+                "delete": True if submodule in ["products", "enquiries", "quotations", "invoices", "delivery_orders"] else False
             }
             for submodule in SUBMODULES
         ]
@@ -135,9 +135,9 @@ PERMISSION_PRESETS = {
         'permissions': [
             {
                 "submodule_id": submodule,
-                "view": submodule in ["create_bill", "bill_reports", "service_bill", "service_bills", "quotations", "invoices", "discount", "customer_details"],
-                "add": submodule in ["create_bill", "service_bill", "quotations", "invoices"],
-                "edit": submodule in ["create_bill", "quotations", "invoices"],
+                "view": submodule in ["create_bill", "bill_reports", "service_bill", "service_bills", "quotations", "invoices", "delivery_orders", "discount", "customer_details"],
+                "add": submodule in ["create_bill", "service_bill", "quotations", "invoices", "delivery_orders"],
+                "edit": submodule in ["create_bill", "quotations", "invoices", "delivery_orders"],
                 "delete": False
             }
             for submodule in SUBMODULES
