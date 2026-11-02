@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { POWERQ_LOGO_BASE64, BCA_LOGO_BASE64 } from "../assets/invoiceLogos";
+import { POWERQ_LOGO_BASE64, BCA_LOGO_BASE64, POWERQ_STAMP_BASE64 } from "../assets/invoiceLogos";
 
 const InvoicePage = () => {
   // Create axios instance with credentials
@@ -1072,17 +1072,30 @@ const InvoicePage = () => {
           .signatures-container {
             display: flex;
             justify-content: space-between;
-            margin-top: 25px;
-            margin-bottom: 12px;
+            margin-top: 18px;
+            margin-bottom: 10px;
           }
           .sig-block {
             width: 44%;
+            position: relative;
           }
           .sig-title {
             font-weight: bold;
             font-size: 8.5pt;
             color: #000;
-            margin-bottom: 38px;
+            margin-bottom: 4px;
+          }
+          .sig-space {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+          }
+          .sig-stamp-img {
+            height: 64px;
+            width: 64px;
+            object-fit: contain;
           }
           .sig-line {
             border-bottom: 1.2px solid #000;
@@ -1254,11 +1267,15 @@ const InvoicePage = () => {
           <div class="signatures-container">
             <div class="sig-block">
               <div class="sig-title">For PowerQ Max Engineering Pte Ltd</div>
+              <div class="sig-space">
+                <img src="${POWERQ_STAMP_BASE64}" alt="PowerQ Max Company Stamp" class="sig-stamp-img" />
+              </div>
               <div class="sig-line"></div>
-              <div class="sig-legend">Name / Signature / Company Stamp / Date</div>
+              <div class="sig-legend">Authorized Signature &amp; Company Stamp</div>
             </div>
             <div class="sig-block">
               <div class="sig-title">Received by Customer</div>
+              <div class="sig-space"></div>
               <div class="sig-line"></div>
               <div class="sig-legend">Name / Signature / Company Stamp / Date</div>
             </div>
