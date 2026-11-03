@@ -41,6 +41,12 @@ def create_app():
         except Exception as e:
             print(f"Delivery order schema check skipped/failed: {e}")
 
+        try:
+            from app.models.invoice import ensure_invoice_schema
+            ensure_invoice_schema(db.engine)
+        except Exception as e:
+            print(f"Invoice schema check skipped/failed: {e}")
+
     # Register Blueprints
     from app.routes.login_routes import login_bp
     from app.routes.product_routes import product_bp

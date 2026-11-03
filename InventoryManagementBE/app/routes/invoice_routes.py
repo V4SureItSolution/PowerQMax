@@ -188,18 +188,26 @@ def create_invoice():
         
         # Create invoice
         invoice = Invoice(
+            # pyrefly: ignore[unexpected-keyword]
             invoice_number=generate_invoice_number(),
-            customer_name=data.get('customerName', '').strip(),
-            customer_phone=data.get('customerPhone', '').strip(),
-            customer_email=data.get('customerEmail', '').strip(),
-            customer_address=data.get('customerAddress', '').strip(),
-            customer_gstin=data.get('customerGstin', '').strip().upper(),
-            attn=data.get('attn', '').strip(),
-            your_po_no=data.get('yourPoNo', data.get('your_po_no', '')).strip(),
-            our_do_no=data.get('ourDoNo', data.get('our_do_no', '')).strip(),
-            bank_name=data.get('bankName', data.get('bank_name', '')).strip(),
-            account_no=data.get('accountNo', data.get('account_no', '')).strip(),
-            bank_code=data.get('bankCode', data.get('bank_code', '')).strip(),
+            customer_name=str(data.get('customerName') or '').strip(),
+            customer_phone=str(data.get('customerPhone') or '').strip(),
+            customer_email=str(data.get('customerEmail') or '').strip(),
+            customer_address=str(data.get('customerAddress') or '').strip(),
+            customer_gstin=str(data.get('customerGstin') or '').strip().upper(),
+            attn=str(data.get('attn') or '').strip(),
+            your_po_no=str(data.get('yourPoNo') or data.get('your_po_no') or '').strip(),
+            our_do_no=str(data.get('ourDoNo') or data.get('our_do_no') or '').strip(),
+            bank_name=str(data.get('bankName') or data.get('bank_name') or 'Oversea-Chinese Banking Corporation Limited Singapore').strip(),
+            account_no=str(data.get('accountNo') or data.get('account_no') or '').strip(),
+            bank_code=str(data.get('bankCode') or data.get('bank_code') or '7339').strip(),
+            account_name=str(data.get('accountName') or data.get('account_name') or 'PowerQ Max Engineering Pte Ltd').strip(),
+            paynow_uen=str(data.get('paynowUen') or data.get('paynow_uen') or '202649167W').strip(),
+            branch_code=str(data.get('branchCode') or data.get('branch_code') or 'First 3 digits of your account number').strip(),
+            swift_code=str(data.get('swiftCode') or data.get('swift_code') or 'OCBCSGSG').strip(),
+            bank_address=str(data.get('bankAddress') or data.get('bank_address') or 'OCBC Bank\n65 Chulia Street,\nOCBC Centre,\nSingapore 049513').strip(),
+            intermediary_bank=str(data.get('intermediaryBank') or data.get('intermediary_bank') or 'JP Morgan Chase Bank, New York, USA (for Telegraphic Transfer in USD)').strip(),
+            intermediary_swift_code=str(data.get('intermediarySwiftCode') or data.get('intermediary_swift_code') or 'CHASUS33').strip(),
             invoice_date=invoice_date,
             due_date=due_date,
             discount_type=data.get('discountType', 'fixed'),
@@ -351,15 +359,29 @@ def update_invoice(id):
         if 'attn' in data:
             invoice.attn = data['attn'].strip()
         if 'yourPoNo' in data or 'your_po_no' in data:
-            invoice.your_po_no = data.get('yourPoNo', data.get('your_po_no', '')).strip()
+            invoice.your_po_no = str(data.get('yourPoNo') or data.get('your_po_no') or '').strip()
         if 'ourDoNo' in data or 'our_do_no' in data:
-            invoice.our_do_no = data.get('ourDoNo', data.get('our_do_no', '')).strip()
+            invoice.our_do_no = str(data.get('ourDoNo') or data.get('our_do_no') or '').strip()
         if 'bankName' in data or 'bank_name' in data:
-            invoice.bank_name = data.get('bankName', data.get('bank_name', '')).strip()
+            invoice.bank_name = str(data.get('bankName') or data.get('bank_name') or '').strip()
         if 'accountNo' in data or 'account_no' in data:
-            invoice.account_no = data.get('accountNo', data.get('account_no', '')).strip()
+            invoice.account_no = str(data.get('accountNo') or data.get('account_no') or '').strip()
         if 'bankCode' in data or 'bank_code' in data:
-            invoice.bank_code = data.get('bankCode', data.get('bank_code', '')).strip()
+            invoice.bank_code = str(data.get('bankCode') or data.get('bank_code') or '7339').strip()
+        if 'accountName' in data or 'account_name' in data:
+            invoice.account_name = str(data.get('accountName') or data.get('account_name') or 'PowerQ Max Engineering Pte Ltd').strip()
+        if 'paynowUen' in data or 'paynow_uen' in data:
+            invoice.paynow_uen = str(data.get('paynowUen') or data.get('paynow_uen') or '202649167W').strip()
+        if 'branchCode' in data or 'branch_code' in data:
+            invoice.branch_code = str(data.get('branchCode') or data.get('branch_code') or 'First 3 digits of your account number').strip()
+        if 'swiftCode' in data or 'swift_code' in data:
+            invoice.swift_code = str(data.get('swiftCode') or data.get('swift_code') or 'OCBCSGSG').strip()
+        if 'bankAddress' in data or 'bank_address' in data:
+            invoice.bank_address = str(data.get('bankAddress') or data.get('bank_address') or 'OCBC Bank\n65 Chulia Street,\nOCBC Centre,\nSingapore 049513').strip()
+        if 'intermediaryBank' in data or 'intermediary_bank' in data:
+            invoice.intermediary_bank = str(data.get('intermediaryBank') or data.get('intermediary_bank') or 'JP Morgan Chase Bank, New York, USA (for Telegraphic Transfer in USD)').strip()
+        if 'intermediarySwiftCode' in data or 'intermediary_swift_code' in data:
+            invoice.intermediary_swift_code = str(data.get('intermediarySwiftCode') or data.get('intermediary_swift_code') or 'CHASUS33').strip()
         
         # Update dates with error handling
         if 'invoiceDate' in data:

@@ -2,7 +2,7 @@ from app.models.attendance import Attendance
 from app.models.billing import Bill, BillItem, Payment
 from app.models.discount import DiscountRange, DiscountLog  
 from app.models.employee import Employee
-from app.models.invoice import Invoice, InvoiceItem
+from app.models.invoice import Invoice, InvoiceItem, ensure_invoice_schema
 from app.models.delivery_order import DeliveryOrder, DeliveryOrderItem, ensure_delivery_order_schema
 from app.models.login import login
 from app.models.product import Product
@@ -25,6 +25,7 @@ __all__ = [
     'DeliveryOrder',
     'DeliveryOrderItem',
     'ensure_delivery_order_schema',
+    'ensure_invoice_schema',
     'login',
     'Product',
     'Quotation',

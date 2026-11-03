@@ -40,6 +40,13 @@ class Invoice(db.Model):
     bank_name = db.Column(db.String(100), nullable=True)
     account_no = db.Column(db.String(100), nullable=True)
     bank_code = db.Column(db.String(50), nullable=True)
+    account_name = db.Column(db.String(150), nullable=True)
+    paynow_uen = db.Column(db.String(50), nullable=True)
+    branch_code = db.Column(db.String(100), nullable=True)
+    swift_code = db.Column(db.String(50), nullable=True)
+    bank_address = db.Column(db.Text, nullable=True)
+    intermediary_bank = db.Column(db.String(255), nullable=True)
+    intermediary_swift_code = db.Column(db.String(50), nullable=True)
     
     # Additional
     notes = db.Column(db.Text, default='')
@@ -50,6 +57,9 @@ class Invoice(db.Model):
     
     # Relationships
     items = db.relationship('InvoiceItem', backref='invoice', lazy=True, cascade='all, delete-orphan')
+
+    def __init__(self, **kwargs):
+        super(Invoice, self).__init__(**kwargs)
     
     def calculate_totals(self):
         """Calculate subtotal, tax totals and final total"""
@@ -117,12 +127,26 @@ class Invoice(db.Model):
             'yourPoNo': self.your_po_no or '',
             'our_do_no': self.our_do_no or '',
             'ourDoNo': self.our_do_no or '',
-            'bank_name': self.bank_name or '',
-            'bankName': self.bank_name or '',
+            'bank_name': self.bank_name or 'Oversea-Chinese Banking Corporation Limited Singapore',
+            'bankName': self.bank_name or 'Oversea-Chinese Banking Corporation Limited Singapore',
             'account_no': self.account_no or '',
             'accountNo': self.account_no or '',
-            'bank_code': self.bank_code or '',
-            'bankCode': self.bank_code or '',
+            'bank_code': self.bank_code or '7339',
+            'bankCode': self.bank_code or '7339',
+            'account_name': self.account_name or 'PowerQ Max Engineering Pte Ltd',
+            'accountName': self.account_name or 'PowerQ Max Engineering Pte Ltd',
+            'paynow_uen': self.paynow_uen or '202649167W',
+            'paynowUen': self.paynow_uen or '202649167W',
+            'branch_code': self.branch_code or 'First 3 digits of your account number',
+            'branchCode': self.branch_code or 'First 3 digits of your account number',
+            'swift_code': self.swift_code or 'OCBCSGSG',
+            'swiftCode': self.swift_code or 'OCBCSGSG',
+            'bank_address': self.bank_address or 'OCBC Bank\n65 Chulia Street,\nOCBC Centre,\nSingapore 049513',
+            'bankAddress': self.bank_address or 'OCBC Bank\n65 Chulia Street,\nOCBC Centre,\nSingapore 049513',
+            'intermediary_bank': self.intermediary_bank or 'JP Morgan Chase Bank, New York, USA (for Telegraphic Transfer in USD)',
+            'intermediaryBank': self.intermediary_bank or 'JP Morgan Chase Bank, New York, USA (for Telegraphic Transfer in USD)',
+            'intermediary_swift_code': self.intermediary_swift_code or 'CHASUS33',
+            'intermediarySwiftCode': self.intermediary_swift_code or 'CHASUS33',
             'invoice_date': self.invoice_date.isoformat() if self.invoice_date else None,
             'invoiceDate': self.invoice_date.isoformat() if self.invoice_date else None,  # Keep both for compatibility
             'due_date': self.due_date.isoformat() if self.due_date else None,
@@ -185,6 +209,9 @@ class InvoiceItem(db.Model):
     
     # Relationship
     product = db.relationship('Product')
+
+    def __init__(self, **kwargs):
+        super(InvoiceItem, self).__init__(**kwargs)
     
     def calculate_totals(self, is_inter_state=False):
         """Calculate item total and tax amounts"""
@@ -237,3 +264,37 @@ class InvoiceItem(db.Model):
             'igst': float(self.igst) if self.igst is not None else 0,
             'total': float(self.total) if self.total is not None else 0
         }
+
+
+def ensure_invoice_schema(engine=None):
+    """
+    Ensure invoices table has all required columns for banking and payment details.
+    """
+    try:
+        from sqlalchemy import inspect, text
+        target_engine = engine or db.engine
+        inspector = inspect(target_engine)
+        tables = inspector.get_table_names()
+
+        if 'invoices' in tables:
+            columns = {c['name'] for c in inspector.get_columns('invoices')}
+            with target_engine.connect() as conn:
+                col_defs = [
+                    ('account_name', "VARCHAR(150) NULL AFTER bank_code"),
+                    ('paynow_uen', "VARCHAR(50) NULL AFTER account_name"),
+                    ('branch_code', "VARCHAR(100) NULL AFTER paynow_uen"),
+                    ('swift_code', "VARCHAR(50) NULL AFTER branch_code"),
+                    ('bank_address', "TEXT NULL AFTER swift_code"),
+                    ('intermediary_bank', "VARCHAR(255) NULL AFTER bank_address"),
+                    ('intermediary_swift_code', "VARCHAR(50) NULL AFTER intermediary_bank")
+                ]
+                for col_name, col_sql in col_defs:
+                    if col_name not in columns:
+                        try:
+                            conn.execute(text(f"ALTER TABLE invoices ADD COLUMN {col_name} {col_sql}"))
+                            conn.commit()
+                            print(f"Added column {col_name} to invoices table")
+                        except Exception as ce:
+                            print(f"Could not add column {col_name}: {ce}")
+    except Exception as e:
+        print(f"Error in ensure_invoice_schema: {e}")

@@ -82,9 +82,16 @@ const InvoicePage = () => {
   const [customer, setCustomer] = useState({ name: "", phone: "", email: "", address: "", gstin: "", attn: "" });
   const [yourPoNo, setYourPoNo] = useState("");
   const [ourDoNo, setOurDoNo] = useState("");
-  const [bankName, setBankName] = useState("[Bank name]");
-  const [accountNo, setAccountNo] = useState("[Account number]");
-  const [bankCode, setBankCode] = useState("[Code]");
+  const [accountName, setAccountName] = useState("PowerQ Max Engineering Pte Ltd");
+  const [paynowUen, setPaynowUen] = useState("202649167W");
+  const [bankName, setBankName] = useState("Oversea-Chinese Banking Corporation Limited Singapore");
+  const [accountNo, setAccountNo] = useState("");
+  const [bankCode, setBankCode] = useState("7339");
+  const [branchCode, setBranchCode] = useState("First 3 digits of your account number");
+  const [swiftCode, setSwiftCode] = useState("OCBCSGSG");
+  const [bankAddress, setBankAddress] = useState("OCBC Bank\n65 Chulia Street,\nOCBC Centre,\nSingapore 049513");
+  const [intermediaryBank, setIntermediaryBank] = useState("Intermediary Bank JP Morgan Chase Bank, New York, USA (for Telegraphic Transfer in USD)");
+  const [intermediarySwiftCode, setIntermediarySwiftCode] = useState("CHASUS33");
   const [search, setSearch] = useState("");
   const [products, setProducts] = useState([]);
   const [items, setItems] = useState([]);
@@ -437,9 +444,16 @@ const InvoicePage = () => {
     setCustomer({ name: "", phone: "", email: "", address: "", gstin: "", attn: "" });
     setYourPoNo("");
     setOurDoNo("");
-    setBankName("[Bank name]");
-    setAccountNo("[Account number]");
-    setBankCode("[Code]");
+    setAccountName("PowerQ Max Engineering Pte Ltd");
+    setPaynowUen("202649167W");
+    setBankName("Oversea-Chinese Banking Corporation Limited Singapore");
+    setAccountNo("");
+    setBankCode("7339");
+    setBranchCode("First 3 digits of your account number");
+    setSwiftCode("OCBCSGSG");
+    setBankAddress("OCBC Bank\n65 Chulia Street,\nOCBC Centre,\nSingapore 049513");
+    setIntermediaryBank("Intermediary Bank JP Morgan Chase Bank, New York, USA (for Telegraphic Transfer in USD)");
+    setIntermediarySwiftCode("CHASUS33");
     setItems([]);
     setDiscount(0);
     setDiscountType("fixed");
@@ -602,9 +616,16 @@ const InvoicePage = () => {
       attn: (customer.attn || '').trim(),
       yourPoNo: yourPoNo.trim(),
       ourDoNo: ourDoNo.trim(),
+      accountName: accountName.trim(),
+      paynowUen: paynowUen.trim(),
       bankName: bankName.trim(),
       accountNo: accountNo.trim(),
       bankCode: bankCode.trim(),
+      branchCode: branchCode.trim(),
+      swiftCode: swiftCode.trim(),
+      bankAddress: bankAddress.trim(),
+      intermediaryBank: intermediaryBank.trim(),
+      intermediarySwiftCode: intermediarySwiftCode.trim(),
       invoiceDate,
       dueDate,
       discountType,
@@ -736,7 +757,7 @@ const InvoicePage = () => {
     };
 
     const items = invoice.items || [];
-    const totalRowsCount = Math.max(15, items.length);
+    const totalRowsCount = Math.max(7, items.length);
 
     let rowsHtml = '';
     for (let i = 0; i < totalRowsCount; i++) {
@@ -1023,39 +1044,126 @@ const InvoicePage = () => {
           /* Payment details */
           .section-heading {
             color: #0b2f6b;
-            font-size: 9pt;
+            font-size: 8.5pt;
             font-weight: bold;
-            margin-top: 8px;
+            margin-top: 6px;
             margin-bottom: 3px;
             text-transform: uppercase;
           }
-          .payment-table {
-            border-collapse: collapse;
-            font-size: 8.5pt;
-            width: 80%;
+          .payment-block {
+            margin-bottom: 6px;
+            page-break-inside: avoid;
           }
-          .pay-label {
+          .pay-summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8pt;
+            margin-bottom: 4px;
+          }
+          .pay-summary-table td {
+            padding: 2px 4px;
+            vertical-align: middle;
+          }
+          .pay-sum-label {
             font-weight: bold;
+            color: #0b2f6b;
+            width: 95px;
+            white-space: nowrap;
+          }
+          .pay-sum-val {
             color: #000;
-            width: 140px;
-            padding: 1.5px 0;
+          }
+          .pay-sum-highlight {
+            background-color: #fff9db !important;
+            padding: 1.5px 6px !important;
+            font-weight: bold;
+            border-radius: 2px;
+          }
+
+          /* Table 1: Oversea-Chinese Banking Corporation & Intermediary Bank */
+          .bank-tt-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2px;
+            margin-bottom: 5px;
+            table-layout: fixed;
+          }
+          .bank-tt-table th, .bank-tt-table td {
+            border: 1px solid #9ca3af;
+            font-size: 7.5pt;
+            padding: 3px 6px;
+          }
+          .bank-tt-corner {
+            width: 18%;
+            background-color: #556e7f !important;
+          }
+          .bank-tt-th {
+            width: 41%;
+            background-color: #556e7f !important;
+            color: #ffffff !important;
+            font-weight: bold;
+            text-align: left;
+            line-height: 1.25;
+            vertical-align: middle;
+          }
+          .bank-tt-label {
+            font-weight: bold;
+            color: #3b5062;
+            background-color: #ffffff !important;
+            line-height: 1.25;
+            vertical-align: middle;
+          }
+          .bank-tt-val {
+            font-weight: 600;
+            color: #000;
+            background-color: #ffffff !important;
+            vertical-align: middle;
+          }
+
+          /* Table 2: Information about OCBC */
+          .ocbc-info-heading {
+            font-size: 8pt;
+            font-weight: bold;
+            color: #222;
+            margin-top: 4px;
+            margin-bottom: 2px;
+          }
+          .ocbc-info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 4px;
+            table-layout: fixed;
+          }
+          .ocbc-info-table td {
+            border: 1px solid #9ca3af;
+            font-size: 7.5pt;
+            padding: 2.5px 6px;
+            line-height: 1.25;
+          }
+          .ocbc-info-label {
+            width: 18%;
+            background-color: #556e7f !important;
+            color: #ffffff !important;
+            font-weight: bold;
             vertical-align: middle;
             white-space: nowrap;
           }
-          .pay-val {
+          .ocbc-info-val {
+            width: 82%;
             color: #000;
-            padding: 1.5px 6px;
+            background-color: #ffffff !important;
             vertical-align: middle;
           }
-          .pay-highlight-row {
-            background-color: #fff9db !important;
+          .ocbc-address-link {
+            color: #0284c7;
+            text-decoration: underline;
           }
           .payment-subtext {
-            font-size: 7.5pt;
+            font-size: 7pt;
             font-style: italic;
-            color: #777;
-            margin-top: 3px;
-            margin-bottom: 8px;
+            color: #666;
+            margin-top: 2px;
+            margin-bottom: 4px;
           }
           /* Terms */
           .terms-ol {
@@ -1229,30 +1337,64 @@ const InvoicePage = () => {
           </table>
 
           <!-- Payment Details -->
-          <div class="section-heading">PAYMENT DETAILS</div>
-          <table class="payment-table">
-            <tr>
-              <td class="pay-label">Account Name:</td>
-              <td class="pay-val">PowerQ Max Engineering Pte Ltd</td>
-            </tr>
-            <tr>
-              <td class="pay-label">Bank:</td>
-              <td class="pay-val pay-highlight-row">${invoice.bank_name || invoice.bankName || '[Bank name]'}</td>
-            </tr>
-            <tr>
-              <td class="pay-label">Account No.:</td>
-              <td class="pay-val pay-highlight-row">${invoice.account_no || invoice.accountNo || '[Account number]'}</td>
-            </tr>
-            <tr>
-              <td class="pay-label">Bank Code / SWIFT:</td>
-              <td class="pay-val pay-highlight-row">${invoice.bank_code || invoice.bankCode || '[Code]'}</td>
-            </tr>
-            <tr>
-              <td class="pay-label">PayNow (UEN):</td>
-              <td class="pay-val">202649167W</td>
-            </tr>
-          </table>
-          <div class="payment-subtext">Please quote the invoice number as your payment reference.</div>
+          <div class="payment-block">
+            <div class="section-heading">PAYMENT DETAILS</div>
+            <table class="pay-summary-table">
+              <tr>
+                <td class="pay-sum-label">Account Name:</td>
+                <td class="pay-sum-val"><strong>${invoice.account_name || invoice.accountName || 'PowerQ Max Engineering Pte Ltd'}</strong></td>
+                <td class="pay-sum-label">PayNow (UEN):</td>
+                <td class="pay-sum-val"><strong class="pay-sum-highlight">${invoice.paynow_uen || invoice.paynowUen || '202649167W'}</strong></td>
+              </tr>
+              <tr>
+                <td class="pay-sum-label">Account No.:</td>
+                <td class="pay-sum-val"><strong class="pay-sum-highlight">${invoice.account_no || invoice.accountNo || '-'}</strong></td>
+                <td class="pay-sum-label">Payment Ref:</td>
+                <td class="pay-sum-val">Please quote Invoice No. <strong>${invoice.invoice_number || invoice.invoiceNumber || ''}</strong></td>
+              </tr>
+            </table>
+
+            <!-- Uploaded Image Table 1: Oversea-Chinese Banking Corporation & Intermediary Bank JP Morgan Chase Bank -->
+            <table class="bank-tt-table">
+              <thead>
+                <tr>
+                  <th class="bank-tt-corner"></th>
+                  <th class="bank-tt-th">${invoice.bank_name || invoice.bankName || 'Oversea-Chinese Banking Corporation Limited Singapore'}</th>
+                  <th class="bank-tt-th">${invoice.intermediary_bank || invoice.intermediaryBank || 'Intermediary Bank JP Morgan Chase Bank, New York, USA (for Telegraphic Transfer in USD)'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="bank-tt-label">SWIFT<br/>BIC Code</td>
+                  <td class="bank-tt-val">${invoice.swift_code || invoice.swiftCode || 'OCBCSGSG'}</td>
+                  <td class="bank-tt-val">${invoice.intermediary_swift_code || invoice.intermediarySwiftCode || 'CHASUS33'}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Uploaded Image Table 2: Information about OCBC -->
+            <div class="ocbc-info-heading">Information about OCBC</div>
+            <table class="ocbc-info-table">
+              <tr>
+                <td class="ocbc-info-label">OCBC Bank Code</td>
+                <td class="ocbc-info-val">${invoice.bank_code || invoice.bankCode || '7339'}</td>
+              </tr>
+              <tr>
+                <td class="ocbc-info-label">OCBC Branch Code</td>
+                <td class="ocbc-info-val">${invoice.branch_code || invoice.branchCode || 'First 3 digits of your account number'}</td>
+              </tr>
+              <tr>
+                <td class="ocbc-info-label">OCBC Bank Address</td>
+                <td class="ocbc-info-val">
+                  ${(invoice.bank_address || invoice.bankAddress || 'OCBC Bank\n65 Chulia Street,\nOCBC Centre,\nSingapore 049513')
+                    .split('\n')
+                    .map((line, idx) => idx === 1 ? `<span class="ocbc-address-link">${line}</span>` : line)
+                    .join('<br/>')}
+                </td>
+              </tr>
+            </table>
+            <div class="payment-subtext">Please quote the invoice number as your payment reference.</div>
+          </div>
 
           <!-- Terms & Conditions -->
           <div class="section-heading">TERMS &amp; CONDITIONS</div>
@@ -1602,6 +1744,40 @@ const InvoicePage = () => {
                       <p><strong>Payment Method:</strong> {(viewingInvoice.payment_method || viewingInvoice.paymentMethod || 'cash').toUpperCase()}</p>
                       <p><strong>Transaction Type:</strong> {safeNumber(viewingInvoice.igst_total || viewingInvoice.igstTotal) > 0 ? 'Inter-State (IGST)' : 'Intra-State (CGST+SGST)'}</p>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment & Banking Information */}
+              <div style={styles.viewSection}>
+                <h4 style={styles.viewSectionTitle}>Payment &amp; Banking Details</h4>
+                <div style={{ ...styles.viewCard, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                  <div>
+                    <h5 style={{ color: '#38bdf8', fontSize: '13px', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Account &amp; Payment
+                    </h5>
+                    <p style={{ margin: '4px 0' }}><strong>Account Name:</strong> {viewingInvoice.account_name || viewingInvoice.accountName || 'PowerQ Max Engineering Pte Ltd'}</p>
+                    <p style={{ margin: '4px 0' }}><strong>Account No.:</strong> <span style={{ background: '#0f172a', padding: '2px 6px', borderRadius: '4px', border: '1px solid #334155' }}>{viewingInvoice.account_no || viewingInvoice.accountNo || '-'}</span></p>
+                    <p style={{ margin: '4px 0' }}><strong>PayNow (UEN):</strong> {viewingInvoice.paynow_uen || viewingInvoice.paynowUen || '202649167W'}</p>
+                    <p style={{ margin: '4px 0' }}><strong>Payment Method:</strong> {(viewingInvoice.payment_method || viewingInvoice.paymentMethod || 'cash').toUpperCase()}</p>
+                    <p style={{ margin: '4px 0' }}><strong>Payment Status:</strong> <span style={{ textTransform: 'capitalize' }}>{viewingInvoice.payment_status || viewingInvoice.paymentStatus || 'unpaid'}</span></p>
+                  </div>
+                  <div>
+                    <h5 style={{ color: '#38bdf8', fontSize: '13px', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Beneficiary Bank (OCBC Singapore)
+                    </h5>
+                    <p style={{ margin: '4px 0' }}><strong>Bank:</strong> {viewingInvoice.bank_name || viewingInvoice.bankName || 'Oversea-Chinese Banking Corporation Limited Singapore'}</p>
+                    <p style={{ margin: '4px 0' }}><strong>Bank Code:</strong> {viewingInvoice.bank_code || viewingInvoice.bankCode || '7339'}</p>
+                    <p style={{ margin: '4px 0' }}><strong>Branch Code:</strong> {viewingInvoice.branch_code || viewingInvoice.branchCode || 'First 3 digits of your account number'}</p>
+                    <p style={{ margin: '4px 0' }}><strong>SWIFT BIC Code:</strong> {viewingInvoice.swift_code || viewingInvoice.swiftCode || 'OCBCSGSG'}</p>
+                    <p style={{ margin: '4px 0', whiteSpace: 'pre-line' }}><strong>Bank Address:</strong> {viewingInvoice.bank_address || viewingInvoice.bankAddress || 'OCBC Bank, 65 Chulia Street, OCBC Centre, Singapore 049513'}</p>
+                  </div>
+                  <div>
+                    <h5 style={{ color: '#38bdf8', fontSize: '13px', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Intermediary Bank (USD Telegraphic Transfer)
+                    </h5>
+                    <p style={{ margin: '4px 0' }}><strong>Intermediary Bank:</strong> {viewingInvoice.intermediary_bank || viewingInvoice.intermediaryBank || 'JP Morgan Chase Bank, New York, USA'}</p>
+                    <p style={{ margin: '4px 0' }}><strong>Intermediary SWIFT:</strong> {viewingInvoice.intermediary_swift_code || viewingInvoice.intermediarySwiftCode || 'CHASUS33'}</p>
                   </div>
                 </div>
               </div>
@@ -1969,66 +2145,169 @@ const InvoicePage = () => {
               {/* Step 3: Payment & Summary */}
               {modalStep === 3 && (
                 <div style={styles.stepContent}>
-                  {/* Payment Details */}
+                  {/* Payment & Banking Details Container */}
                   <div style={styles.paymentSection}>
-                    <h4 style={styles.sectionTitle}>Payment Details</h4>
-                    <div style={styles.paymentGrid}>
-                      <div style={styles.formField}>
-                        <label style={styles.label}>Payment Method</label>
-                        <select 
-                          style={styles.select}
-                          value={paymentMethod}
-                          onChange={(e) => setPaymentMethod(e.target.value)}
-                        >
-                          <option value="cash">Cash</option>
-                          <option value="card">Card</option>
-                          <option value="bank_transfer">Bank Transfer</option>
-                          <option value="cheque">Cheque</option>
-                          <option value="online">Online</option>
-                        </select>
-                      </div>
-                      
-                      <div style={styles.formField}>
-                        <label style={styles.label}>Payment Status</label>
-                        <select 
-                          style={styles.select}
-                          value={paymentStatus}
-                          onChange={(e) => setPaymentStatus(e.target.value)}
-                        >
-                          <option value="paid">Paid</option>
-                          <option value="unpaid">Unpaid</option>
-                          <option value="partial">Partial</option>
-                        </select>
-                      </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <h4 style={{ ...styles.sectionTitle, margin: 0 }}>Payment &amp; Banking Details</h4>
+                      <span style={{ fontSize: '12px', color: '#94a3b8', background: '#1e293b', padding: '4px 10px', borderRadius: '4px', border: '1px solid #334155' }}>
+                        Configured for OCBC Singapore &amp; Intermediary Bank
+                      </span>
+                    </div>
 
-                      <div style={styles.formField}>
-                        <label style={styles.label}>Bank Name</label>
-                        <input 
-                          style={styles.input} 
-                          value={bankName} 
-                          onChange={(e) => setBankName(e.target.value)} 
-                          placeholder="[Bank name]"
-                        />
+                    {/* Card 1: Payment & Account Information */}
+                    <div style={styles.bankCard}>
+                      <div style={styles.bankCardHeader}>
+                        <span style={styles.bankCardBadge}>1</span>
+                        <h5 style={styles.bankCardTitle}>Payment &amp; Account Settings</h5>
                       </div>
+                      <div style={styles.bankCardGrid}>
+                        <div style={styles.formField}>
+                          <label style={styles.label}>Payment Method</label>
+                          <select 
+                            style={styles.select}
+                            value={paymentMethod}
+                            onChange={(e) => setPaymentMethod(e.target.value)}
+                          >
+                            <option value="cash">Cash</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="paynow">PayNow</option>
+                            <option value="card">Card</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="online">Online</option>
+                          </select>
+                        </div>
+                        
+                        <div style={styles.formField}>
+                          <label style={styles.label}>Payment Status</label>
+                          <select 
+                            style={styles.select}
+                            value={paymentStatus}
+                            onChange={(e) => setPaymentStatus(e.target.value)}
+                          >
+                            <option value="unpaid">Unpaid</option>
+                            <option value="paid">Paid</option>
+                            <option value="partial">Partial</option>
+                          </select>
+                        </div>
 
-                      <div style={styles.formField}>
-                        <label style={styles.label}>Account Number</label>
-                        <input 
-                          style={styles.input} 
-                          value={accountNo} 
-                          onChange={(e) => setAccountNo(e.target.value)} 
-                          placeholder="[Account number]"
-                        />
+                        <div style={styles.formField}>
+                          <label style={styles.label}>Account Name</label>
+                          <input 
+                            style={styles.input} 
+                            value={accountName} 
+                            onChange={(e) => setAccountName(e.target.value)} 
+                            placeholder="PowerQ Max Engineering Pte Ltd"
+                          />
+                        </div>
+
+                        <div style={styles.formField}>
+                          <label style={styles.label}>Account Number</label>
+                          <input 
+                            style={styles.input} 
+                            value={accountNo} 
+                            onChange={(e) => setAccountNo(e.target.value)} 
+                            placeholder="Enter bank account number"
+                          />
+                        </div>
+
+                        <div style={styles.formField}>
+                          <label style={styles.label}>PayNow (UEN)</label>
+                          <input 
+                            style={styles.input} 
+                            value={paynowUen} 
+                            onChange={(e) => setPaynowUen(e.target.value)} 
+                            placeholder="202649167W"
+                          />
+                        </div>
                       </div>
+                    </div>
 
-                      <div style={styles.formField}>
-                        <label style={styles.label}>Bank Code / SWIFT</label>
-                        <input 
-                          style={styles.input} 
-                          value={bankCode} 
-                          onChange={(e) => setBankCode(e.target.value)} 
-                          placeholder="[Code]"
-                        />
+                    {/* Card 2: Beneficiary Bank Information (OCBC Singapore) */}
+                    <div style={{ ...styles.bankCard, marginTop: '16px' }}>
+                      <div style={styles.bankCardHeader}>
+                        <span style={styles.bankCardBadge}>2</span>
+                        <h5 style={styles.bankCardTitle}>Beneficiary Bank Information (OCBC Singapore)</h5>
+                      </div>
+                      <div style={styles.bankCardGrid}>
+                        <div style={{ ...styles.formField, gridColumn: 'span 2' }}>
+                          <label style={styles.label}>Bank Name</label>
+                          <input 
+                            style={styles.input} 
+                            value={bankName} 
+                            onChange={(e) => setBankName(e.target.value)} 
+                            placeholder="Oversea-Chinese Banking Corporation Limited Singapore"
+                          />
+                        </div>
+
+                        <div style={styles.formField}>
+                          <label style={styles.label}>OCBC Bank Code</label>
+                          <input 
+                            style={styles.input} 
+                            value={bankCode} 
+                            onChange={(e) => setBankCode(e.target.value)} 
+                            placeholder="7339"
+                          />
+                        </div>
+
+                        <div style={styles.formField}>
+                          <label style={styles.label}>OCBC Branch Code</label>
+                          <input 
+                            style={styles.input} 
+                            value={branchCode} 
+                            onChange={(e) => setBranchCode(e.target.value)} 
+                            placeholder="First 3 digits of your account number"
+                          />
+                        </div>
+
+                        <div style={styles.formField}>
+                          <label style={styles.label}>SWIFT / BIC Code</label>
+                          <input 
+                            style={styles.input} 
+                            value={swiftCode} 
+                            onChange={(e) => setSwiftCode(e.target.value)} 
+                            placeholder="OCBCSGSG"
+                          />
+                        </div>
+
+                        <div style={{ ...styles.formField, gridColumn: 'span 2' }}>
+                          <label style={styles.label}>OCBC Bank Address</label>
+                          <textarea 
+                            style={{ ...styles.input, minHeight: '60px', resize: 'vertical' }} 
+                            value={bankAddress} 
+                            onChange={(e) => setBankAddress(e.target.value)} 
+                            placeholder="OCBC Bank, 65 Chulia Street, OCBC Centre, Singapore 049513"
+                            rows={3}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card 3: Intermediary Bank Information (for TT in USD) */}
+                    <div style={{ ...styles.bankCard, marginTop: '16px' }}>
+                      <div style={styles.bankCardHeader}>
+                        <span style={styles.bankCardBadge}>3</span>
+                        <h5 style={styles.bankCardTitle}>Intermediary Bank (for Telegraphic Transfer in USD)</h5>
+                      </div>
+                      <div style={styles.bankCardGrid}>
+                        <div style={styles.formField}>
+                          <label style={styles.label}>Intermediary Bank</label>
+                          <input 
+                            style={styles.input} 
+                            value={intermediaryBank} 
+                            onChange={(e) => setIntermediaryBank(e.target.value)} 
+                            placeholder="JP Morgan Chase Bank, New York, USA (for Telegraphic Transfer in USD)"
+                          />
+                        </div>
+
+                        <div style={styles.formField}>
+                          <label style={styles.label}>Intermediary SWIFT BIC Code</label>
+                          <input 
+                            style={styles.input} 
+                            value={intermediarySwiftCode} 
+                            onChange={(e) => setIntermediarySwiftCode(e.target.value)} 
+                            placeholder="CHASUS33"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2582,6 +2861,7 @@ const styles = {
     background: "#0f172a",
     padding: "20px",
     borderRadius: "8px",
+    border: "1px solid #334155",
   },
   sectionTitle: {
     color: "#e2e8f0",
@@ -2593,6 +2873,41 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
     gap: "16px",
+  },
+  bankCard: {
+    background: "#1e293b",
+    border: "1px solid #334155",
+    borderRadius: "8px",
+    padding: "16px",
+  },
+  bankCardHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    marginBottom: "14px",
+  },
+  bankCardBadge: {
+    background: "#0284c7",
+    color: "#ffffff",
+    width: "22px",
+    height: "22px",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "12px",
+    fontWeight: "bold",
+  },
+  bankCardTitle: {
+    color: "#e2e8f0",
+    fontSize: "14px",
+    fontWeight: "600",
+    margin: 0,
+  },
+  bankCardGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gap: "14px",
   },
   transactionSection: {
     background: "#0f172a",
