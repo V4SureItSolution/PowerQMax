@@ -47,6 +47,12 @@ def create_app():
         except Exception as e:
             print(f"Invoice schema check skipped/failed: {e}")
 
+        try:
+            from app.models.purchase_order import ensure_purchase_order_schema
+            ensure_purchase_order_schema(db.engine)
+        except Exception as e:
+            print(f"Purchase order schema check skipped/failed: {e}")
+
     # Register Blueprints
     from app.routes.login_routes import login_bp
     from app.routes.product_routes import product_bp
@@ -55,6 +61,7 @@ def create_app():
     from app.routes.quotation_routes import quotation_bp
     from app.routes.invoice_routes import invoice_bp
     from app.routes.delivery_order_routes import delivery_order_bp
+    from app.routes.purchase_order_routes import purchase_order_bp
     from app.routes.service_routes import service_bp
     from app.routes.usertype_routes import user_type_bp
     from app.routes.employee_routes import employee_bp
@@ -74,6 +81,7 @@ def create_app():
     app.register_blueprint(quotation_bp, url_prefix='/api')
     app.register_blueprint(invoice_bp, url_prefix='/api')
     app.register_blueprint(delivery_order_bp, url_prefix='/api')
+    app.register_blueprint(purchase_order_bp, url_prefix='/api')
     app.register_blueprint(service_bp)
     app.register_blueprint(user_type_bp)
     app.register_blueprint(employee_bp, url_prefix="/api")

@@ -61,6 +61,13 @@ const Sidebar = ({ isOpen }) => {
       return userPermissions.some(p => (p.submodule_id === "invoices" || p.submodule_id === "quotations") && p.view === true);
     }
 
+    // Purchase orders permission can also inherit from invoices/quotations/supplier_list if not explicitly set
+    if (submodule_id === "purchase_orders") {
+      const hasDirect = userPermissions.some(p => p.submodule_id === "purchase_orders" && p.view === true);
+      if (hasDirect) return true;
+      return userPermissions.some(p => (p.submodule_id === "invoices" || p.submodule_id === "quotations" || p.submodule_id === "supplier_list") && p.view === true);
+    }
+
     const perm = userPermissions.find(p => p.submodule_id === submodule_id);
     return perm ? perm.view === true : false;
   };
@@ -260,7 +267,7 @@ const Sidebar = ({ isOpen }) => {
           )}
 
           {/* Billing Section */}
-          {isSectionVisible(["create_bill", "bill_reports", "service_bill", "service_bills", "sales_bills", "quotations", "invoices", "delivery_orders", "discount"]) && (
+          {isSectionVisible(["create_bill", "bill_reports", "service_bill", "service_bills", "sales_bills", "quotations", "invoices", "delivery_orders", "purchase_orders", "discount"]) && (
             <>
               <div style={styles.sectionTitle}>Billing</div>
               {hasPermission("create_bill") && (
@@ -316,6 +323,13 @@ const Sidebar = ({ isOpen }) => {
                 <NavLink to="/delivery-order" style={getLinkStyle}>
                   <FaTruck style={styles.icon} />
                   <span style={styles.text}>Delivery Orders</span>
+                </NavLink>
+              )}
+
+              {hasPermission("purchase_orders") && (
+                <NavLink to="/purchase-order" style={getLinkStyle}>
+                  <FaClipboardCheck style={styles.icon} />
+                  <span style={styles.text}>Purchase Orders</span>
                 </NavLink>
               )}
 

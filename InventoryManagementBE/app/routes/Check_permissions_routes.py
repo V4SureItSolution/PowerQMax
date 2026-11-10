@@ -39,6 +39,8 @@ MODULES_JSON = {
                 {"id": "service_bills", "name": "Service Bills"},
                 {"id": "quotations", "name": "Quotations"},
                 {"id": "invoices", "name": "Invoices"},
+                {"id": "delivery_orders", "name": "Delivery Orders"},
+                {"id": "purchase_orders", "name": "Purchase Orders"},
                 {"id": "discount", "name": "Discount"}
             ]
         },

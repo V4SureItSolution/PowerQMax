@@ -22,6 +22,7 @@ import StockOut from "./components/StockOut";
 import Quotation from "./components/Quotation";
 import Invoice from "./components/Invoice";
 import DeliveryOrder from "./components/DeliveryOrder";
+import PurchaseOrder from "./components/PurchaseOrder";
 import Service from "./components/ServiceBill";
 import ServiceBillView from "./components/ServiceBillView";
 import UserType from "./components/UserType";
@@ -85,6 +86,8 @@ function Layout() {
           <Route path="/invoice" element={<Invoice />} />
           <Route path="/delivery-order" element={<DeliveryOrder />} />
           <Route path="/deliveryorder" element={<DeliveryOrder />} />
+          <Route path="/purchase-order" element={<PurchaseOrder />} />
+          <Route path="/purchaseorder" element={<PurchaseOrder />} />
           <Route path="/service" element={<Service/>}/>
           <Route path="/attendance" element={<Attendance />} />
           <Route path="/userSettings" element={<UserSettings />} />

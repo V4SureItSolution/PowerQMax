@@ -20,6 +20,7 @@ import {
   FaInfoCircle,
 } from "react-icons/fa";
 import { POWERQ_LOGO_BASE64, BCA_LOGO_BASE64 } from "../assets/invoiceLogos";
+import { COMPANY_STAMP_CSS, renderCompanyStampHeading, renderCompanyStamp, renderDocumentFooterHtml, DOC_PRINT_SCRIPT } from "../assets/companyStampHelper";
 
 const FONT_FAMILY =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
@@ -768,6 +769,7 @@ const DeliveryOrderPage = () => {
             justify-content: space-between;
             min-height: 140px;
             background: #ffffff;
+            position: relative;
           }
           .sig-header {
             font-size: 8pt;
@@ -788,11 +790,7 @@ const DeliveryOrderPage = () => {
             justify-content: flex-end;
             gap: 4px;
           }
-          .sig-line {
-            border-bottom: 1px solid #94a3b8;
-            height: 35px;
-            margin-bottom: 4px;
-          }
+          ${COMPANY_STAMP_CSS}
           .sig-label {
             font-size: 7.5pt;
             color: #64748b;
@@ -952,12 +950,15 @@ const DeliveryOrderPage = () => {
             <div class="sig-box">
               <div class="sig-header">Issued By / Prepared By</div>
               <div class="sig-body">
-                <div><strong>PowerQ Max Engineering Pte Ltd</strong></div>
-                <div>Name: ${
+                ${renderCompanyStampHeading("For PowerQ Max Engineering Pte Ltd")}
+                <div style="font-size: 8pt; color: #475569; margin-bottom: 2px;">Name: ${
                   doObj.preparedBy || doObj.prepared_by || "Authorized Staff"
                 }</div>
+                <div class="sig-space">
+                  ${renderCompanyStamp()}
+                </div>
                 <div class="sig-line"></div>
-                <div class="sig-label">Authorized Signature &amp; Stamp</div>
+                <div class="sig-label">This is a computer-generated document. No signature is required.</div>
                 <div>Date: ${formattedDate}</div>
               </div>
             </div>
@@ -965,14 +966,16 @@ const DeliveryOrderPage = () => {
             <div class="sig-box">
               <div class="sig-header">Delivered By</div>
               <div class="sig-body">
-                <div>Driver: ${
+                <div style="font-size: 8.5pt; font-weight: bold; color: #000; margin-bottom: 8px;">Delivery Personnel</div>
+                <div style="font-size: 8pt; color: #475569;">Driver: ${
                   doObj.driverName ||
                   doObj.driver_name ||
                   doObj.deliveredBy ||
                   doObj.delivered_by ||
                   "Delivery Team"
                 }</div>
-                <div>Vehicle: ${doObj.vehicleNo || doObj.vehicle_no || "-"}</div>
+                <div style="font-size: 8pt; color: #475569; margin-bottom: 2px;">Vehicle: ${doObj.vehicleNo || doObj.vehicle_no || "-"}</div>
+                <div class="sig-space"></div>
                 <div class="sig-line"></div>
                 <div class="sig-label">Driver Signature</div>
                 <div>Date: ___________</div>
@@ -982,10 +985,12 @@ const DeliveryOrderPage = () => {
             <div class="sig-box">
               <div class="sig-header">Received in Good Condition</div>
               <div class="sig-body">
-                <div>Received By: ${
+                <div style="font-size: 8.5pt; font-weight: bold; color: #000; margin-bottom: 8px;">Customer / Recipient</div>
+                <div style="font-size: 8pt; color: #475569;">Received By: ${
                   doObj.receivedBy || doObj.received_by || "_________________"
                 }</div>
-                <div>NRIC / IC: _________________</div>
+                <div style="font-size: 8pt; color: #475569; margin-bottom: 2px;">NRIC / IC: _________________</div>
+                <div class="sig-space"></div>
                 <div class="sig-line"></div>
                 <div class="sig-label">Receiver Signature &amp; Company Stamp</div>
                 <div>Date &amp; Time: _______________</div>
@@ -994,13 +999,9 @@ const DeliveryOrderPage = () => {
           </div>
         </div>
 
-        <script>
-          window.onload = function() {
-            setTimeout(function() {
-              window.print();
-            }, 300);
-          };
-        </script>
+        ${renderDocumentFooterHtml()}
+
+        ${DOC_PRINT_SCRIPT}
       </body>
       </html>
     `;

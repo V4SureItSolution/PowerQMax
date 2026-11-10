@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { POWERQ_LOGO_BASE64, BCA_LOGO_BASE64, POWERQ_STAMP_BASE64 } from "../assets/invoiceLogos";
+import { POWERQ_LOGO_BASE64, BCA_LOGO_BASE64 } from "../assets/invoiceLogos";
+import { COMPANY_STAMP_CSS, renderCompanyStampHeading, renderCompanyStamp, renderDocumentFooterHtml, DOC_PRINT_SCRIPT } from "../assets/companyStampHelper";
 
 const InvoicePage = () => {
   // Create axios instance with credentials
@@ -1180,47 +1181,15 @@ const InvoicePage = () => {
           .signatures-container {
             display: flex;
             justify-content: space-between;
-            margin-top: 18px;
-            margin-bottom: 10px;
+            margin-top: 14px;
+            margin-bottom: 8px;
+            page-break-inside: avoid;
           }
           .sig-block {
             width: 44%;
             position: relative;
           }
-          .sig-title {
-            font-weight: bold;
-            font-size: 8.5pt;
-            color: #000;
-            margin-bottom: 4px;
-          }
-          .sig-space {
-            height: 64px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-          }
-          .sig-stamp-img {
-            height: 64px;
-            width: 64px;
-            object-fit: contain;
-          }
-          .sig-line {
-            border-bottom: 1.2px solid #000;
-            width: 100%;
-            margin-bottom: 4px;
-          }
-          .sig-legend {
-            font-size: 7.5pt;
-            color: #666;
-          }
-          /* Page footer */
-          .page-footer {
-            text-align: center;
-            font-size: 7.5pt;
-            color: #555;
-            margin-top: 8px;
-          }
+          ${COMPANY_STAMP_CSS}
         </style>
       </head>
       <body>
@@ -1408,12 +1377,12 @@ const InvoicePage = () => {
           <!-- Signatures -->
           <div class="signatures-container">
             <div class="sig-block">
-              <div class="sig-title">For PowerQ Max Engineering Pte Ltd</div>
+              ${renderCompanyStampHeading("For PowerQ Max Engineering Pte Ltd")}
               <div class="sig-space">
-                <img src="${POWERQ_STAMP_BASE64}" alt="PowerQ Max Company Stamp" class="sig-stamp-img" />
+                ${renderCompanyStamp()}
               </div>
               <div class="sig-line"></div>
-              <div class="sig-legend">Authorized Signature &amp; Company Stamp</div>
+              <div class="sig-legend">This is a computer-generated document. No signature is required.</div>
             </div>
             <div class="sig-block">
               <div class="sig-title">Received by Customer</div>
@@ -1422,18 +1391,11 @@ const InvoicePage = () => {
               <div class="sig-legend">Name / Signature / Company Stamp / Date</div>
             </div>
           </div>
-
-          <!-- Footer -->
-          <div class="page-footer">Page 1 of 1</div>
         </div>
 
-        <script>
-          window.onload = function() {
-            setTimeout(function() {
-              window.print();
-            }, 300);
-          };
-        </script>
+        ${renderDocumentFooterHtml()}
+
+        ${DOC_PRINT_SCRIPT}
       </body>
       </html>
     `;

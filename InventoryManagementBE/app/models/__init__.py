@@ -7,6 +7,7 @@ from app.models.delivery_order import DeliveryOrder, DeliveryOrderItem, ensure_d
 from app.models.login import login
 from app.models.product import Product
 from app.models.quotation import Quotation, QuotationItem
+from app.models.purchase_order import PurchaseOrder, PurchaseOrderItem, ensure_purchase_order_schema
 from app.models.service import Service, ServiceBillItem
 from app.models.supplier import Supplier, Item
 from app.models.usertype import UserType
@@ -30,6 +31,9 @@ __all__ = [
     'Product',
     'Quotation',
     'QuotationItem',
+    'PurchaseOrder',
+    'PurchaseOrderItem',
+    'ensure_purchase_order_schema',
     'Service',
     'ServiceBillItem',
     'Supplier',
