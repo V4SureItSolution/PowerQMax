@@ -1,0 +1,171 @@
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from flask_cors import CORS
+from flask_jwt_extended import JWTManager
+from config import Config
+
+# Initialize extensions
+db = SQLAlchemy()
+migrate = Migrate()
+jwt = JWTManager()
+
+
+def create_app():
+    app = Flask(__name__)
+    print("Creating Flask App...")
+    app.config.from_object(Config)
+
+    # Initialize database
+    db.init_app(app)
+    migrate.init_app(app, db)
+    
+    # Initialize JWT
+    jwt.init_app(app)
+
+    # Enable CORS
+    CORS(
+        app,
+        supports_credentials=True,
+        resources={r"/*": {"origins": "*"}},
+    )
+
+    # Import models so Flask-Migrate detects them
+    from app import models
+
+    # Ensure delivery order schema has all required columns
+    with app.app_context():
+        try:
+            from app.models.delivery_order import ensure_delivery_order_schema
+            ensure_delivery_order_schema(db.engine)
+        except Exception as e:
+            print(f"Delivery order schema check skipped/failed: {e}")
+
+        try:
+            from app.models.invoice import ensure_invoice_schema
+            ensure_invoice_schema(db.engine)
+        except Exception as e:
+            print(f"Invoice schema check skipped/failed: {e}")
+
+        try:
+            from app.models.purchase_order import ensure_purchase_order_schema
+            ensure_purchase_order_schema(db.engine)
+        except Exception as e:
+            print(f"Purchase order schema check skipped/failed: {e}")
+
+        try:
+            from app.models.attendance import ensure_attendance_schema
+            ensure_attendance_schema(db.engine)
+        except Exception as e:
+            print(f"Attendance schema check skipped/failed: {e}")
+
+        try:
+            from app.models.salary import ensure_salary_schema
+            ensure_salary_schema(db.engine)
+        except Exception as e:
+            print(f"Salary schema check skipped/failed: {e}")
+
+        try:
+            from app.models.employee import ensure_employee_schema
+            ensure_employee_schema(db.engine)
+        except Exception as e:
+            print(f"Employee schema check skipped/failed: {e}")
+
+        try:
+            from app.models.billing import ensure_billing_schema
+            ensure_billing_schema(db.engine)
+        except Exception as e:
+            print(f"Billing schema check skipped/failed: {e}")
+
+        try:
+            from app.models.supplier import ensure_supplier_schema
+            ensure_supplier_schema(db.engine)
+        except Exception as e:
+            print(f"Supplier schema check skipped/failed: {e}")
+
+        try:
+            from app.models.quotation import ensure_quotation_schema
+            ensure_quotation_schema(db.engine)
+        except Exception as e:
+            print(f"Quotation schema check skipped/failed: {e}")
+
+        try:
+            from app.models.invoice import ensure_invoice_schema
+            ensure_invoice_schema(db.engine)
+        except Exception as e:
+            print(f"Invoice schema check skipped/failed: {e}")
+
+        try:
+            from app.models.expense import ensure_expense_schema
+            ensure_expense_schema(db.engine)
+        except Exception as e:
+            print(f"Expense schema check skipped/failed: {e}")
+
+        try:
+            from app.models.progress_claim import ensure_progress_claim_schema
+            ensure_progress_claim_schema(db.engine)
+        except Exception as e:
+            print(f"Progress claim schema check skipped/failed: {e}")
+
+        try:
+            from app.models.boq import ensure_boq_schema
+            ensure_boq_schema(db.engine)
+        except Exception as e:
+            print(f"BOQ schema check skipped/failed: {e}")
+
+    # Register Blueprints
+    from app.routes.login_routes import login_bp
+    from app.routes.product_routes import product_bp
+    from app.routes.billing_routes import billing_bp
+    from app.routes.supplier_routes import supplier_bp
+    from app.routes.quotation_routes import quotation_bp
+    from app.routes.invoice_routes import invoice_bp
+    from app.routes.delivery_order_routes import delivery_order_bp
+    from app.routes.purchase_order_routes import purchase_order_bp
+    from app.routes.service_routes import service_bp
+    from app.routes.usertype_routes import user_type_bp
+    from app.routes.employee_routes import employee_bp
+    from app.routes.attendance_routes import attendance_bp
+    from app.routes.salary_routes import salary_bp
+    from app.routes.current_company_routes import company_bp
+    from app.routes.enquiry_routes import enquiry_bp
+    from app.routes.discount_routes import discount_bp
+    from app.routes.permissions_routes import permissions_bp
+    from app.routes.payment_routes import payment_tracking_bp
+    from app.routes.Check_permissions_routes import check_permissions_bp
+    from app.routes.restore_permissions_routes import restore_permissions_bp
+    from app.routes.progress_claim_routes import progress_claim_bp
+    from app.routes.boq_routes import boq_bp
+
+    app.register_blueprint(login_bp, url_prefix="/api")
+    app.register_blueprint(product_bp, url_prefix="/api")
+    app.register_blueprint(billing_bp, url_prefix="/api")
+    app.register_blueprint(supplier_bp)
+    app.register_blueprint(quotation_bp, url_prefix='/api')
+    app.register_blueprint(invoice_bp, url_prefix='/api')
+    app.register_blueprint(delivery_order_bp, url_prefix='/api')
+    app.register_blueprint(purchase_order_bp, url_prefix='/api')
+    app.register_blueprint(service_bp)
+    app.register_blueprint(user_type_bp)
+    app.register_blueprint(employee_bp, url_prefix="/api")
+    app.register_blueprint(attendance_bp)
+    app.register_blueprint(salary_bp)
+    app.register_blueprint(company_bp)
+    app.register_blueprint(enquiry_bp, url_prefix="/api") 
+    app.register_blueprint(discount_bp)
+    app.register_blueprint(permissions_bp)
+    app.register_blueprint(payment_tracking_bp)
+    app.register_blueprint(check_permissions_bp)
+    app.register_blueprint(restore_permissions_bp)
+    app.register_blueprint(progress_claim_bp, url_prefix='/api')
+    app.register_blueprint(boq_bp, url_prefix='/api')
+
+    # Health Check Route
+    @app.route('/api/health', methods=['GET'])
+    def health_check():
+        return {
+            "status": "healthy",
+            "message": "API is working"
+        }, 200
+
+    return app
